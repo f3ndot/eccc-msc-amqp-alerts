@@ -9,18 +9,25 @@ from pika.spec import Basic
 from pika.spec import BasicProperties
 from pika.frame import Method
 from wmo_header import decode_header as decode_wmo_header
+from configparser import ConfigParser
 
 connection_string = "amqps://anonymous:anonymous@dd.weather.gc.ca:5671"
 
+configuration = ConfigParser()
+configuration.read("config.ini")
+config = configuration["eccc-msc-amqp-alerts"]
+
 exchange = "xpublic"
 exchange_type = "topic"
-subtopic = "alerts.#"
-exchange_key = f"v02.post.{subtopic}"
-# exchange_key = '#' # ALL
-# exchange_key = '*.*.bulletins.alphanumeric.*.WA.#' # ALL
-exchange_key = "*.*.bulletins.alphanumeric.*.#"  # ALL
 
-my_queue_name = "q_anonymous.justinbull.all_alerts.123abc.abc123"
+if config.get("routing_key"):
+    exchange_key = config["routing_key"]
+else:
+    exchange_key = f"v02.post.{config['subtopic']}"
+# exchange_key = '*.*.bulletins.alphanumeric.*.WA.#' # ALL
+# exchange_key = "*.*.bulletins.alphanumeric.*.#"  # ALL
+
+my_queue_name = f"q_anonymous.eccc-msc-amqp-alerts.{config['name']}"
 
 routing_keys_found: dict[str, int] = {}
 
