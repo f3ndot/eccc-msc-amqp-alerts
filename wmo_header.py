@@ -303,7 +303,7 @@ area_designators_table = {
 }
 
 pattern = re.compile(
-    r"^(?P<data_type_1>[A-Z])(?P<data_type_2>[A-Z])(?P<country_or_area>[A-Z][A-Z])([0-9][0-9]) (?P<station>[A-Z]{4}) (?P<datetime>[0-9]{6})$"
+    r"^(?P<data_type_1>[A-Z])(?P<data_type_2>[A-Z])(?P<country_or_area>[A-Z][A-Z])([0-9][0-9]) (?P<center>[A-Z]{4}) (?P<datetime>[0-9]{6})$"
 )
 
 gts_tables = GTStoWIS2()
@@ -320,14 +320,21 @@ def decode_header(wmo_gts_comms_header: str = None):
     current_utc_time = datetime.utcnow()
 
     data_type_1_tbl = gts_tables.tableTTAAii.get(parsed_header["data_type_1"], {})
+
+    area = country_or_territory_designators_table.get(
+        parsed_header["country_or_area"]
+    ) or area_designators_table.get(parsed_header["country_or_area"])
+
+    center = (
+        gts_tables.tableCCCC.get(parsed_header["center"], {}).get("name")
+        or parsed_header["center"]
+    )
+
     return {
         "data_type": data_type_1_tbl.get("topic"),
         "data_type_sub": data_type_1_tbl["T2"].get(parsed_header["data_type_2"]),
-        "area": country_or_territory_designators_table.get(
-            parsed_header["country_or_area"]
-        )
-        or area_designators_table.get(parsed_header["country_or_area"]),
-        "station": parsed_header["station"],
+        "area": area,
+        "center": center,
         "datetime": datetime(
             current_utc_time.year,
             current_utc_time.month,
