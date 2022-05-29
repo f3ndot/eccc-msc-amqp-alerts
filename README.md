@@ -39,7 +39,7 @@ poetry run python -m eccc_msc_amqp_alerts
 - Handle recovering previously declared queues from a former session (delete or purge first?)
 - Recover from 'soft fails' with Pika (eg restarting a channel or connection)
 
----
+## Acknowledgements
 
 ❤️ Many thanks to ECCC for making this data open and accessible to the public.
 
