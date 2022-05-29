@@ -32,7 +32,8 @@ poetry run python -m eccc_msc_amqp_alerts
 
 ## TODO
 
-- Settle on a web framework
+- Make this an optionally importable Python library and people pass in their callback hooks?
+- Settle on a web framework for non-library mode
 - Figure out data structure and pattern for efficiently passing bulletins/alert to web framework
 - Settle many queues vs 1 queue with client-side filtering debate
 - Replace prints with `logging` pattern
@@ -49,6 +50,6 @@ poetry run python -m eccc_msc_amqp_alerts
 
 ## Copyright
 
-Copyright (C) 2022 Justin A. S. Bull
+Copyright © 2022 Justin A. S. Bull
 
 See [`eccc_msc_amqp_alerts/__init__.py`](eccc_msc_amqp_alerts/__init__.py) for full notice
