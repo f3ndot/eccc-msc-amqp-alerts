@@ -43,6 +43,7 @@ poetry run python -m eccc_msc_amqp_alerts
 - Handle if channel is already closed on shutdown for queue unbinds/delates
 - Handle recovering previously declared queues from a former session (delete or purge first?)
 - Recover from 'soft fails' with Pika (eg restarting a channel or connection)
+- Handle `StreamLostError: ("Stream connection lost: TimeoutError(60, 'Operation timed out')",)`
 
 ## Acknowledgements
 

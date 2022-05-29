@@ -131,7 +131,10 @@ class MessageConsumer:
         print("[*] Shutting down... ", end="", flush=True)
 
         # since queues auto-delete, this should be enough?
-        self.channel.stop_consuming()
+        try:
+            self.channel.stop_consuming()
+        except AssertionError as e:
+            print(f"[!] Didn't graceully stopped consuming :(. {e}")
         print(" Stopped consumer(s)...", end="", flush=True)
 
         for queue in self.queues:
