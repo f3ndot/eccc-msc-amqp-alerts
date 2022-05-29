@@ -40,6 +40,28 @@ class Queue:
     exchange: str
     routing_key: str
     callback: OnMessageCallback
+    channel: "BlockingChannel"
+    consumer_tag: t.Optional[str] = None
+
+    def declare(self):
+        declare_result: "pika.frame.Method" = self.channel.queue_declare(
+            queue=self.name,
+            auto_delete=True,  # let's keep it simple
+            durable=False,
+        )
+        if not isinstance(declare_result.method, pika.spec.Queue.DeclareOk):
+            raise RuntimeError("Unable to declare queue")
+        return declare_result
+
+    def bind(self):
+        bind_result: "pika.frame.Method" = self.channel.queue_bind(
+            queue=self.name,
+            exchange=self.exchange,
+            routing_key=self.routing_key,
+        )
+        if not isinstance(bind_result.method, pika.spec.Queue.BindOk):
+            raise RuntimeError("Unable to bind queue")
+        return bind_result
 
 
 class MessageConsumer:
@@ -68,39 +90,28 @@ class MessageConsumer:
     ):
         # TODO: dont assume state of channel(s) and connection, their declarations or bindings
         queue_name = self._queue_name(name)
-        declare_result: "pika.frame.Method" = self.channel.queue_declare(
-            queue=queue_name,
-            auto_delete=True,  # let's keep it simple
-            durable=False,
-        )
-        if not isinstance(declare_result.method, pika.spec.Queue.DeclareOk):
-            raise RuntimeError("Unable to declare queue")
-        bind_result = self.channel.queue_bind(
-            queue=queue_name,
-            exchange=self._exchange,
-            routing_key=routing_key,
-        )
-        if not isinstance(bind_result.method, pika.spec.Queue.BindOk):
-            raise RuntimeError("Unable to bind queue")
         queue = Queue(
             name=queue_name,
             exchange=self._exchange,
             routing_key=routing_key,
             callback=callback,
+            channel=self.channel,
         )
         self.queues.append(queue)
         return queue
 
     def consume(self):
+        # TODO: validate this approach. research this: https://pika.readthedocs.io/en/stable/examples/blocking_consume_recover_multiple_hosts.html
         for queue in self.queues:
-            consumer_tag: str = self.channel.basic_consume(
+            queue.declare()
+            queue.bind()
+            queue.consumer_tag = self.channel.basic_consume(
                 queue=queue.name,
                 on_message_callback=self._wrap_callback(queue.callback),
                 auto_ack=True,  # let's keep it simple
             )
-            print(f"[*] Consumer tag for {queue.name} is {consumer_tag}")
+            print(f"[*] Consumer tag for {queue.name} is {queue.consumer_tag}")
         try:
-            # self._setup_sigint()
             self.channel.start_consuming()
         except StreamLostError as e:
             print(f"[!] Damn! Encountered StreamLostError: {repr(e)}")
@@ -113,24 +124,37 @@ class MessageConsumer:
         if self._shutting_down is True:
             return
         self._shutting_down = True
-        print("[*] Shutting down...")
+        print("[*] Shutting down... ", end="", flush=True)
+
+        # since queues auto-delete, this should be enough?
+        self.channel.stop_consuming()
+        print(" Stopped consumer(s)...", end="", flush=True)
+
         for queue in self.queues:
-            unbind_result = self.channel.queue_unbind(
-                queue=queue.name,
-                exchange=queue.exchange,
-                routing_key=queue.routing_key,
-            )
-            if not isinstance(unbind_result.method, pika.spec.Queue.UnbindOk):
-                print("[!] Unable to unbind queue. Proceeding anyway...")
-            delete_result = self.channel.queue_delete(queue=queue.name)
-            if not isinstance(delete_result.method, pika.spec.Queue.DeleteOk):
-                print("[!] Unable to delete queue. Proceeding anyway...")
-            print(f"[.] Shut down {queue.name}")
-        self.queues.clear()
+            queue.consumer_tag = None
+        # for queue in self.queues:
+        #     # TODO: more gracefully handle this situation
+        #     if self.channel.is_closed:
+        #         break
+        #     unbind_result = self.channel.queue_unbind(
+        #         queue=queue.name,
+        #         exchange=queue.exchange,
+        #         routing_key=queue.routing_key,
+        #     )
+        #     if not isinstance(unbind_result.method, pika.spec.Queue.UnbindOk):
+        #         print("[!] Unable to unbind queue. Proceeding anyway...")
+        #     delete_result = self.channel.queue_delete(queue=queue.name)
+        #     if not isinstance(delete_result.method, pika.spec.Queue.DeleteOk):
+        #         print("[!] Unable to delete queue. Proceeding anyway...")
+        #     print(f"[.] Shut down {queue.name}")
+        # self.queues.clear()
         if self.channel.is_open:
             self.channel.close()
+            print(" Closed channel...", end="", flush=True)
         if self.connection.is_open:
             self.connection.close()
+            print(" Closed connection...", end="", flush=True)
+        print("")
         self.stats.print_statistics()
         self._shutting_down = False
 
