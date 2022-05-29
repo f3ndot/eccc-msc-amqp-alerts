@@ -125,6 +125,7 @@ class MessageConsumer:
             delete_result = self.channel.queue_delete(queue=queue.name)
             if not isinstance(delete_result.method, pika.spec.Queue.DeleteOk):
                 print("[!] Unable to delete queue. Proceeding anyway...")
+            print(f"[.] Shut down {queue.name}")
         self.queues.clear()
         if self.channel.is_open:
             self.channel.close()
@@ -134,7 +135,7 @@ class MessageConsumer:
         self._shutting_down = False
 
     def _queue_name(self, subname):
-        return f"q_anonymous.eccc-msc-amqp-alerts.{config['name']}.{subname}"
+        return f"q_anonymous.eccc-msc-amqp-alerts.{config.name}.{subname}"
 
     def _wrap_callback(self, func: OnMessageCallback):
         """Returns a function/callable that wraps the underlying callback function, so
