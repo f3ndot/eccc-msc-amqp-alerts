@@ -1,6 +1,6 @@
 import pika.spec
 from pika.adapters.blocking_connection import BlockingChannel
-from wmo_header import decode_header as decode_wmo_header
+from .wmo_header import decode_header as decode_wmo_header
 from .message_consumer import MessageConsumer
 from .config import config
 
