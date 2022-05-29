@@ -1,10 +1,16 @@
-# ECCC MSC AMPQ Alerts
+# ECCC MSC AMQP Alerts
 
 Subscribe and listen to Environment and Climate Change Canada's (ECCC) Meteorological
-Service of Canada (MSC) Datamart AMPQ server for timely notification of all and any
-meteorological alerts.
+Service of Canada (MSC) Datamart AMQP server for timely notification of all and any
+meteorological alerts and bulletins.
 
 ## Installation
+
+```
+pip install .
+```
+
+or
 
 ```
 poetry install
@@ -13,7 +19,13 @@ poetry install
 ## Running
 
 ```
-poetry run python listen.py
+python -m eccc_msc_amqp_alerts
+```
+
+or
+
+```
+poetry run python -m eccc_msc_amqp_alerts
 ```
 
 ---
