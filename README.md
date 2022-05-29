@@ -51,4 +51,4 @@ poetry run python -m eccc_msc_amqp_alerts
 
 Copyright (C) 2022 Justin A. S. Bull
 
-See [`eccc-msc-amqp-alerts/__init__.py`](eccc-msc-amqp-alerts/__init__.py) for full notice
+See [`eccc_msc_amqp_alerts/__init__.py`](eccc_msc_amqp_alerts/__init__.py) for full notice
