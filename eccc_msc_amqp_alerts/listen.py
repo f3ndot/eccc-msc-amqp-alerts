@@ -10,10 +10,7 @@ import pika.spec
 from datetime import datetime
 from collections import deque
 from pika.adapters.blocking_connection import BlockingChannel
-from .wmo_header import (
-    decode_header as decode_wmo_header,
-    pretty_header as pretty_wmo_header,
-)
+from .wmo_header import pretty_header as pretty_wmo_header
 from .message_consumer import MessageConsumer
 from .config import config
 

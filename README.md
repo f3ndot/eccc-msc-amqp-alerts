@@ -4,6 +4,8 @@ Subscribe and listen to Environment and Climate Change Canada's (ECCC) Meteorolo
 Service of Canada (MSC) Datamart AMQP server for timely notification of all and any
 meteorological alerts and bulletins.
 
+This is still in active development and may have many incomplete features or behaviours.
+
 ## Installation
 
 ```
@@ -28,7 +30,7 @@ or
 poetry run python -m eccc_msc_amqp_alerts
 ```
 
-## TODO:
+## TODO
 
 - Settle on a web framework
 - Figure out data structure and pattern for efficiently passing bulletins/alert to web framework
@@ -44,8 +46,6 @@ poetry run python -m eccc_msc_amqp_alerts
 ❤️ Many thanks to ECCC for making this data open and accessible to the public.
 
 [Data Source: Environment and Climate Change Canada](https://eccc-msc.github.io/open-data/licence/readme_en/)
-
----
 
 ## Copyright
 
