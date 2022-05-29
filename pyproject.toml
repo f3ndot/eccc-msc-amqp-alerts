@@ -3,6 +3,8 @@ name = "eccc-msc-amqp-alerts"
 version = "0.1.0"
 description = "Subscribe and listen to Environment and Climate Change Canada's (ECCC) Meteorological Service of Canada (MSC) Datamart AMQP server for timely notification of all and any meteorological alerts and bulletins."
 authors = ["Justin Bull <me@justinbull.ca>"]
+license = "GPL-3.0-or-later"  # required due to GTStoWIS2
+repository = "https://github.com/f3ndot/eccc-msc-amqp-alerts"
 
 [tool.poetry.dependencies]
 python = "^3.9"
