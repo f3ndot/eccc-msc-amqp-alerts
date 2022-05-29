@@ -6,6 +6,8 @@ meteorological alerts and bulletins.
 
 This is still in active development and may have many incomplete features or behaviours.
 
+![Main workflow](https://github.com/f3ndot/eccc-msc-amqp-alerts/actions/workflows/python-app.yml/badge.svg)
+
 ## Installation
 
 ```
