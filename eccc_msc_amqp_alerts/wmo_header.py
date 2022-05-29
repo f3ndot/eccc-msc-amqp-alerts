@@ -1,3 +1,8 @@
+# eccc-msc-amqp-alerts
+# Copyright (C) 2022  Justin A. S. Bull
+# See __init__.py for full notice
+
+
 # From WMO-No. 386 (2015 ed), Attachment II-5 (page 80-...)
 # https://library.wmo.int/doc_num.php?explnum_id=10469
 

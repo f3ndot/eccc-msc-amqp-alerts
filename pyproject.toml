@@ -5,6 +5,7 @@ description = "Subscribe and listen to Environment and Climate Change Canada's (
 authors = ["Justin Bull <me@justinbull.ca>"]
 license = "GPL-3.0-or-later"  # required due to GTStoWIS2
 repository = "https://github.com/f3ndot/eccc-msc-amqp-alerts"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"

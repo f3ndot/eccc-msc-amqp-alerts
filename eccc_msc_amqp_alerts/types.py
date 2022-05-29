@@ -1,3 +1,7 @@
+# eccc-msc-amqp-alerts
+# Copyright (C) 2022  Justin A. S. Bull
+# See __init__.py for full notice
+
 import typing as t
 
 import pika.spec
