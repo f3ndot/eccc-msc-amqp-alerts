@@ -28,7 +28,7 @@ class Config(object):
 
     def __repr__(self) -> str:
         type_ = type(self)
-        return f"<{type_.__module__}.{type_.__qualname__} {self.__dict__} at {hex(id(self))}>"
+        return f"<{type_.__qualname__}({self.__dict__})>"
 
 
 config = Config()

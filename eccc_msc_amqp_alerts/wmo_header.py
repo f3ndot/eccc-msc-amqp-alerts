@@ -5,7 +5,7 @@
 
 # Data type designator T1 Matrix Table for T1T2A1A2ii definitions
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from GTStoWIS2 import GTStoWIS2
 
 country_or_territory_designators_table = {
@@ -310,9 +310,7 @@ gts_tables = GTStoWIS2()
 gts_tables.genTableTTAAii()
 
 
-def decode_header(wmo_gts_comms_header: str = None):
-    if wmo_gts_comms_header is None:
-        raise ValueError("wmo_gts_comms_header is required")
+def decode_header(wmo_gts_comms_header: str):
     result = pattern.match(wmo_gts_comms_header)
     if result is None:
         raise ValueError("Invalid header. Must be format of 'T₁T₂A₁A₂ii CCCC YYGGgg'")
@@ -350,5 +348,14 @@ def decode_header(wmo_gts_comms_header: str = None):
             int(parsed_header["datetime"][0:2]),
             int(parsed_header["datetime"][2:4]),
             int(parsed_header["datetime"][4:6]),
+            tzinfo=timezone.utc,
         ),
     }
+
+
+def pretty_header(wmo_gts_comms_header: str):
+    _str = ""
+    header_info = decode_header(wmo_gts_comms_header)
+    for k, v in header_info.items():
+        _str += "{:<15} {}\n".format(k, v)
+    return _str

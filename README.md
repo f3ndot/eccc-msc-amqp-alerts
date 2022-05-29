@@ -28,6 +28,17 @@ or
 poetry run python -m eccc_msc_amqp_alerts
 ```
 
+## TODO:
+
+- Settle on a web framework
+- Figure out data structure and pattern for efficiently passing bulletins/alert to web framework
+- Settle many queues vs 1 queue with client-side filtering debate
+- Replace prints with `logging` pattern
+- Fetch and parse alert CAP files in a fun way (make own pseudo alphanumeric equivalent and maybe an ascii ⚠️)
+- Handle if channel is already closed on shutdown for queue unbinds/delates
+- Handle recovering previously declared queues from a former session (delete or purge first?)
+- Recover from 'soft fails' with Pika (eg restarting a channel or connection)
+
 ---
 
 ❤️ Many thanks to ECCC for making this data open and accessible to the public.
