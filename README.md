@@ -39,19 +39,21 @@ You should probably use `-v` when running the program.
 ```
 usage: eccc_msc_amqp_alerts [-h] [-d] [-v]
 
-Listen to and print alerts and bulletins from Environment and Climate Change Canada's Metereological Service Canada Datamart AMQP server
+Listen to and print alerts and bulletins from Environment and Climate Change Canada's
+Metereological Service Canada Datamart AMQP server
 
 optional arguments:
   -h, --help     show this help message and exit
-  -d, --debug    Print lots of debugging statements
-  -v, --verbose  Be verbose
+  -d, --debug    print lots of debugging statements
+  -v, --verbose  be verbose, show what's going on
 
 Copyright (C) 2022  Justin A. S. Bull
 
 Data Source: Environment and Climate Change Canada
 https://eccc-msc.github.io/open-data/licence/readme_en/
 
-This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under certain conditions.
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are
+welcome to redistribute it under certain conditions.
 ```
 
 ## TODO
