@@ -20,7 +20,7 @@ This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you a
 parser.add_argument(
     "-d",
     "--debug",
-    help="Print lots of debugging statements",
+    help="print lots of debugging statements",
     action="store_const",
     dest="loglevel",
     const=logging.DEBUG,
@@ -29,7 +29,7 @@ parser.add_argument(
 parser.add_argument(
     "-v",
     "--verbose",
-    help="Be verbose",
+    help="be verbose, show what's going on",
     action="store_const",
     dest="loglevel",
     const=logging.INFO,
