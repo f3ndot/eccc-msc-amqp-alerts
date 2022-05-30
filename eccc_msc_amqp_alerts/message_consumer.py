@@ -4,6 +4,7 @@
 
 from dataclasses import dataclass
 import typing as t
+import logging
 import pika
 import pika.spec
 from collections import defaultdict
@@ -16,13 +17,15 @@ if t.TYPE_CHECKING:
     import pika.frame
     from pika.adapters.blocking_connection import BlockingChannel
 
+logger = logging.getLogger(__name__)
+
 
 class TopicStatistics:
     routing_keys: defaultdict[str, int] = defaultdict(int)
 
     def print_statistics(self):
-        print("Most popular topics:")
-        print("====================")
+        logger.info("Most popular topics:")
+        logger.info("====================")
         singles_count = 0
         for k, v in sorted(
             self.routing_keys.items(), key=lambda pair: pair[1], reverse=True
@@ -31,9 +34,9 @@ class TopicStatistics:
                 singles_count += 1
                 # stop a long tail. consider truncating by subtopic depth instead?
                 if singles_count > 10:
-                    print("...")
+                    logger.info("...")
                     break
-            print("{:<70} {:<100}".format(k, v))
+            logger.info("{:<70} {}".format(k, v))
 
 
 @dataclass
@@ -79,11 +82,11 @@ class MessageConsumer:
     _shutting_down = False
 
     def __init__(self) -> None:
-        print(f"[*] Connecting to {self._connection_string}...")
+        logger.info(f"Connecting to {self._connection_string}...")
         self.connection = pika.BlockingConnection(
             pika.URLParameters(self._connection_string)
         )
-        print("[*] Creating channel...")
+        logger.info("Creating channel...")
         self.channel = self.connection.channel()
 
     def subscribe_to_topic(
@@ -114,13 +117,13 @@ class MessageConsumer:
                 on_message_callback=self._wrap_callback(queue.callback),
                 auto_ack=True,  # let's keep it simple
             )
-            print(f"[*] Consumer tag for {queue.name} is {queue.consumer_tag}")
+            logger.info(f"Consumer tag for {queue.name} is {queue.consumer_tag}")
         try:
             self.channel.start_consuming()
         except StreamLostError as e:
-            print(f"[!] Damn! Encountered StreamLostError: {repr(e)}")
+            logger.error(f"Damn! Encountered StreamLostError: {repr(e)}")
         except KeyboardInterrupt:
-            print("[!] You pressed Ctrl+C or triggered SIGINT!")
+            logger.warn("You pressed Ctrl+C or triggered SIGINT!")
         finally:
             self.shutdown()
 
@@ -128,14 +131,14 @@ class MessageConsumer:
         if self._shutting_down is True:
             return
         self._shutting_down = True
-        print("[*] Shutting down... ", end="", flush=True)
+        logger.info("Shutting down...")
 
         # since queues auto-delete, this should be enough?
         try:
             self.channel.stop_consuming()
         except AssertionError as e:
-            print(f"[!] Didn't graceully stopped consuming :(. {e}")
-        print(" Stopped consumer(s)...", end="", flush=True)
+            logger.warn(f"Didn't graceully stopped consuming :(. {e}")
+        logger.info("Stopped consumer(s)...")
 
         for queue in self.queues:
             queue.consumer_tag = None
@@ -157,11 +160,10 @@ class MessageConsumer:
         # self.queues.clear()
         if self.channel.is_open:
             self.channel.close()
-            print(" Closed channel...", end="", flush=True)
+            logger.info("Closed channel...")
         if self.connection.is_open:
             self.connection.close()
-            print(" Closed connection...", end="", flush=True)
-        print("")
+            logger.info("Closed connection...")
         self.stats.print_statistics()
         self._shutting_down = False
 

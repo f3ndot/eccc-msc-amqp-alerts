@@ -3,9 +3,9 @@
 # See __init__.py for full notice
 
 from typing import Deque
+import logging
 import sys
 import requests
-import pprint
 import pika.spec
 from datetime import datetime
 from collections import deque
@@ -14,12 +14,11 @@ from .wmo_header import pretty_header as pretty_wmo_header
 from .message_consumer import MessageConsumer
 from .config import config
 
-# exchange_key = '*.*.bulletins.alphanumeric.*.WA.#' # ALL
-# exchange_key = "*.*.bulletins.alphanumeric.*.#"  # ALL
 
-
+logger = logging.getLogger(__name__)
 print(
-    """[!] ❤️ Many thanks to ECCC for making this data open and accessible to the public. Required attribution notice follows...
+    """
+    ❤️ Many thanks to ECCC for making this data open and accessible to the public. Required attribution notice follows...
 
     Data Source: Environment and Climate Change Canada
     https://eccc-msc.github.io/open-data/licence/readme_en/
@@ -33,31 +32,37 @@ user_agent = f"eccc-msc-amqp-alerts/0.1.0 (Python {'.'.join([str(i) for i in sys
 
 
 def fetch_bulletin_text(body_timestamp, original_host: str, path: str):
+    logger.debug(
+        f"Fetching bulletin: body_timestamp={body_timestamp} host={original_host} path={path}"
+    )
     timestamp = datetime.strptime(body_timestamp, "%Y%m%d%H%M%S.%f")
     # ECCC implores consumers to use the HPFX host to keep loads low on DD
     hpfx_url = (
         f"https://hpfx.collab.science.gc.ca/{timestamp.strftime('%Y%m%d')}/WXO-DD{path}"
     )
-    # TODO: exponential backoff and retry
+    # TODO: exponential backoff and retry. TODO: use request sessions?
     response = requests.get(
         hpfx_url,
         headers={"User-Agent": user_agent},
-        timeout=30,
+        timeout=10,
     )
     if not response.ok:  # fall back to original source (probably always DD)
-        print(
-            f"[*] Unable to fetch from HPFX, falling back to original host {original_host}"
+        logger.warn(
+            f"Unable to fetch from HPFX, falling back to original host {original_host}"
         )
         response = requests.get(
             f"{original_host}{path}",
             headers={"User-Agent": user_agent},
-            timeout=30,
+            timeout=10,
         )
 
     if not response.ok:
-        print(f"[!] Unable to get bulletin from either HPFX or {original_host}{path}")
+        logger.error(
+            f"Unable to get bulletin from either HPFX or {original_host}{path}"
+        )
         return
 
+    logger.info("Fetched Bulletin:")
     print(response.text)
     recent_bulletins.append(response.text)
 
@@ -68,18 +73,16 @@ def on_bulletin_message(
     properties: pika.spec.BasicProperties,
     body: bytes,
 ):
-    timestamp, host, path = body.decode().split(" ")
+    _body = body.decode()
+    logger.debug({"method": method, "properties": properties, "body": _body})
+    timestamp, host, path = _body.split(" ")
     wmo_gts_comms_header = " ".join(
         path.split("/")[-1].replace("_", " ").split(" ")[0:3]
     ).rstrip()
-    print(wmo_gts_comms_header)
-    print("==================")
-    print(pretty_wmo_header(wmo_gts_comms_header))
-    print("=====================================================================")
+    logger.debug(f"WMO GTS Abbreviated Header Section: {wmo_gts_comms_header}")
+    logger.info(f"WMO GTS Header:\n{pretty_wmo_header(wmo_gts_comms_header)}")
     fetch_bulletin_text(timestamp, host, path)
-    print("=====================================================================\n")
-    # TODO make this all debug loggering
-    # pprint.pprint({"header": decoded_header, "body": body.decode()})
+    logger.debug("on_bulletin_message complete")
 
 
 def on_alert_message(
@@ -88,9 +91,10 @@ def on_alert_message(
     properties: pika.spec.BasicProperties,
     body: bytes,
 ):
-    print("⚠️⚠️⚠️ ALERT! ALERT! ALERT! ⚠️⚠️⚠️")
-    # TODO make this all debug loggering
-    pprint.pprint({"method": method, "properties": properties, "body": body.decode()})
+    _body = body.decode()
+    print(f"⚠️⚠️⚠️ ALERT! ALERT! ALERT! ⚠️⚠️⚠️ - {_body}")
+    logger.debug({"method": method, "properties": properties, "body": _body})
+    logger.debug("on_alert_message complete")
 
 
 def run():
