@@ -120,7 +120,6 @@ def run():
                 routing_key="*.*.alerts.#",
                 callback=on_alert_message,
             )
-        consumer.consume()
-    except Exception:
-        consumer.shutdown()
-        raise
+        consumer.run()
+    except KeyboardInterrupt:
+        consumer.stop()
