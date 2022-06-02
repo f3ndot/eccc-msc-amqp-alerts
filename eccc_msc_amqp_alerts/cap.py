@@ -3,7 +3,12 @@
 # See __init__.py for full notice
 
 import os
+import logging
+from re import T
+from tkinter import N
 from lxml import etree
+
+logger = logging.getLogger(__name__)
 
 _cwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,8 +31,11 @@ class Alert:
 
     # Frustrating that XPath 1.0 doesn't support default namespaces
     _CAPNS = "urn:oasis:names:tc:emergency:cap:1.2"
+    _ns = {"x": _CAPNS}
+
     _tree: etree._ElementTree
 
+    _SUPPORTED_CAP_CP = "profile:CAP-CP:0.4"
     _SUPPORTED_CAP_CP_EVENT = "profile:CAP-CP:Event:0.4"
 
     def __init__(self, bytes: bytes = None, path: str = None) -> None:
@@ -43,19 +51,33 @@ class Alert:
         #
         # See: https://www.publicsafety.gc.ca/cnt/mrgnc-mngmnt/mrgnc-prprdnss/capcp/index-en.aspx
         xmlschema.assertValid(self._tree)
-        self._parse_relevent_data()
+        self._assert_supported_cap_cp()
 
-    def _parse_relevent_data(self):
-        self.cp_event_code = self._parse_cp_event_code()
+    def _assert_supported_cap_cp(self):
+        # TODO: is this more readable and faster than xpath or elementpath?
+        codes = list(self._tree.getroot().iterchildren(tag=self._nstag("code")))
+        logger.debug(f"<code>'s: {[c.text for c in codes]}")
+        assert any(
+            [c.text == self._SUPPORTED_CAP_CP for c in codes]
+        ), "Unsupported CAP-CP version or not a CAP-CP file"
 
-    def _parse_cp_event_code(self):
-        N = self._CAPNS
-        e_eventCode = self._tree.find(f"/{{{N}}}info/{{{N}}}eventCode")
-        assert (
-            e_eventCode.findtext(f"{{{N}}}valueName") == self._SUPPORTED_CAP_CP_EVENT
+    def parse(self):
+        self.cp_eventCode = self._parse_cp_eventCode()
+
+    def _parse_cp_eventCode(self):
+        eventCodes = self._tree.xpath("./x:info/x:eventCode", namespaces=self._ns)
+        assert all(
+            [
+                ec.findtext(self._nstag("valueName")) == self._SUPPORTED_CAP_CP_EVENT
+                for ec in eventCodes
+            ]
         ), "Unsupported CAP-CP Event version"
-        return e_eventCode.findtext(f"{{{N}}}value")
+        return eventCodes[0].findtext(self._nstag("value"))
 
     def __repr__(self) -> str:
         type_ = type(self)
         return f"<{type_.__qualname__}({self.__dict__})>"
+
+    def _nstag(self, tag: str):
+        """A helper to make things more readable when lxml won't let us use ns prefixes"""
+        return f"{{{self._CAPNS}}}{tag}"
