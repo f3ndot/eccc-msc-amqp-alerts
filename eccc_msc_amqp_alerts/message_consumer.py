@@ -72,6 +72,7 @@ class MessageConsumer:
         self._connection: pika.SelectConnection = None
         self._channel: "pika.channel.Channel" = None
         self._closing = False
+        self._on_started_cb_fired = False
 
         self._queues: list[Queue] = []
 
@@ -278,10 +279,27 @@ class MessageConsumer:
                 queue.name,
                 on_message_callback=self._wrap_callback(queue.callback),
                 auto_ack=True,  # let's keep it simple
+                callback=self.on_consumeok,
             )
             queue.consuming = True
             queue.was_consuming = True
             logger.info(f"Consumer tag for {queue.name} is {queue.consumer_tag}")
+
+    def on_consumeok(self, _unused_frame: "pika.frame.Method"):
+        if not self._on_started_cb:
+            return
+        if self._on_started_cb_fired:
+            return
+
+        if all([q.consuming for q in self._queues]):
+            logger.info(f"Firing _on_started_cb callback! {self._on_started_cb}")
+            self._on_started_cb_fired = True
+            self._on_started_cb()
+        else:
+            consuming_queues_count = len([q for q in self._queues if q.consuming])
+            logger.info(
+                f"Waiting for {consuming_queues_count} queues to start consuming..."
+            )
 
     def add_on_cancel_callback(self):
         """Add a callback that will be invoked if RabbitMQ cancels the consumer for some
@@ -369,10 +387,11 @@ class MessageConsumer:
         logger.info("Closing the channel")
         self._channel.close()
 
-    def run(self):
+    def run(self, on_started: t.Optional[t.Callable] = None):
         """Run the example consumer by connecting to RabbitMQ and then starting the
         IOLoop to block and allow the SelectConnection to operate.
         """
+        self._on_started_cb = on_started
         self._connection = self.connect()
         t.cast("IOLoop", self._connection.ioloop).start()
 

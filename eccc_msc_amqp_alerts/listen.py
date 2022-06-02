@@ -48,7 +48,8 @@ def fetch_bulletin_text(body_timestamp, original_host: str, path: str):
     )
     if not response.ok:  # fall back to original source (probably always DD)
         logger.warn(
-            f"Unable to fetch from HPFX, falling back to original host {original_host}"
+            f"Unable to fetch from HPFX ({hpfx_url}), falling back to original host: "
+            f"{original_host}{path}"
         )
         response = requests.get(
             f"{original_host}{path}",
@@ -82,7 +83,8 @@ def on_bulletin_message(
     logger.debug(f"WMO GTS Abbreviated Header Section: {wmo_gts_comms_header}")
     logger.info(f"WMO GTS Header:\n{pretty_wmo_header(wmo_gts_comms_header)}")
     fetch_bulletin_text(timestamp, host, path)
-    logger.debug("on_bulletin_message complete")
+    logger.info("End of bulletin")
+    # logger.debug("on_bulletin_message complete")
 
 
 def on_alert_message(
@@ -120,6 +122,9 @@ def run():
                 routing_key="*.*.alerts.#",
                 callback=on_alert_message,
             )
-        consumer.run()
+
+        print("🔌 Connecting... ", end="", flush=True)
+        consumer.run(on_started=lambda: print("OK! Now listening for messages... 👂"))
     except KeyboardInterrupt:
+        print("🛎️ Keyboard interrupt received! Shutting down...")
         consumer.stop()
