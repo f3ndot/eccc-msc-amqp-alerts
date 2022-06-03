@@ -37,15 +37,16 @@ poetry run python -m eccc_msc_amqp_alerts -v
 You should probably use `-v` when running the program.
 
 ```
-usage: eccc_msc_amqp_alerts [-h] [-d] [-v]
+usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s]
 
-Listen to and print alerts and bulletins from Environment and Climate Change Canada's
+Listen to and print alerts and bulletins from Environment and Climate Change Canada's 
 Metereological Service Canada Datamart AMQP server
 
 optional arguments:
-  -h, --help     show this help message and exit
-  -d, --debug    print lots of debugging statements
-  -v, --verbose  be verbose, show what's going on
+  -h, --help         show this help message and exit
+  -d, --debug        print lots of debugging statements
+  -v, --verbose      be verbose, show what's going on
+  -s, --print-stats  print statistics on exit
 
 Copyright (C) 2022  Justin A. S. Bull
 
@@ -62,8 +63,7 @@ welcome to redistribute it under certain conditions.
 - Settle on a web framework for non-library mode
 - Figure out data structure and pattern for efficiently passing bulletins/alert to web framework
 - Settle many queues vs 1 queue with client-side filtering debate
-- Fetch and parse alert CAP files in a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
-- Handle if channel is already closed on shutdown for queue unbinds/delates
+- Finish parsing alert CAP files and display a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
 - Handle recovering previously declared queues from a former session (delete or purge first?)
 - Recover from 'soft fails' with Pika (eg restarting a channel or connection)
 - Handle `StreamLostError: ("Stream connection lost: TimeoutError(60, 'Operation timed out')",)`

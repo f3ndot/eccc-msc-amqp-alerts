@@ -34,13 +34,20 @@ parser.add_argument(
     dest="loglevel",
     const=logging.INFO,
 )
-args = parser.parse_args()
+parser.add_argument(
+    "-s",
+    "--print-stats",
+    action="store_true",
+    help="print statistics on exit",
+    dest="print_stats",
+)
+parsed_args = parser.parse_args()
 
 logging.basicConfig(
-    level=args.loglevel,
+    level=parsed_args.loglevel,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
 
 from .listen import run  # noqa: E402
 
-run()
+run(print_stats=parsed_args.print_stats)

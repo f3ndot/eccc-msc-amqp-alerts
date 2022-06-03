@@ -25,9 +25,11 @@ logger = logging.getLogger(__name__)
 class TopicStatistics:
     routing_keys: defaultdict[str, int] = defaultdict(int)
 
-    def print_statistics(self):
-        logger.info("Most popular topics:")
-        logger.info("====================")
+    def __str__(self) -> str:
+        s = [
+            "Most popular topics:",
+            "====================",
+        ]
         singles_count = 0
         for k, v in sorted(
             self.routing_keys.items(), key=lambda pair: pair[1], reverse=True
@@ -36,9 +38,14 @@ class TopicStatistics:
                 singles_count += 1
                 # stop a long tail. consider truncating by subtopic depth instead?
                 if singles_count > 10:
-                    logger.info("...")
+                    s.append("...")
                     break
-            logger.info("{:<70} {}".format(k, v))
+            s.append("{:<70} {}".format(k, v))
+        return "\n".join(s)
+
+    def log_statistics(self):
+        for line in str(self).split("\n"):
+            logger.info(line)
 
 
 @dataclass

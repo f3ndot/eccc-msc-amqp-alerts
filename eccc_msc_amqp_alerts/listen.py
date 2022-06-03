@@ -99,7 +99,7 @@ def on_alert_message(
     logger.debug("on_alert_message complete")
 
 
-def run():
+def run(print_stats=False):
     consumer = MessageConsumer()
     try:
         if config.bulletins:
@@ -128,3 +128,6 @@ def run():
     except KeyboardInterrupt:
         print("🛎️ Keyboard interrupt received! Shutting down...")
         consumer.stop()
+        if print_stats:
+            print("📊 Statistics!")
+            print(consumer.stats)
