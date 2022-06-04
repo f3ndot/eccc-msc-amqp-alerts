@@ -13,6 +13,7 @@ pika = "^1.2.0"
 requests = "^2.26.0"
 gtstowis2 = {git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "main"}
 lxml = "^4.8.0"
+quart = "^0.17.0"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.28.0"

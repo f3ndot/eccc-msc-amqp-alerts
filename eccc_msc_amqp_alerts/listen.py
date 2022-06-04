@@ -48,7 +48,7 @@ def fetch_bulletin_text(body_timestamp, original_host: str, path: str):
     )
     if not response.ok:  # fall back to original source (probably always DD)
         logger.warn(
-            f"Unable to fetch from HPFX ({hpfx_url}), falling back to original host: "
+            f"Unable to fetch from HPFX {hpfx_url} ({response.status_code} {response.reason}), falling back to original host: "
             f"{original_host}{path}"
         )
         response = requests.get(

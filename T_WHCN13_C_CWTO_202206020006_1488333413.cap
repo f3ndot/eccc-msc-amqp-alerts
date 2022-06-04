@@ -1,0 +1,266 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+    <identifier>urn:oid:2.49.0.1.124.1488333413.2022</identifier>
+    <sender>cap-pac@canada.ca</sender>
+    <sent>2022-06-02T00:06:55-00:00</sent>
+    <status>Actual</status>
+    <msgType>Update</msgType>
+    <source>Env. Can. - Can. Met. Ctr. – Montréal</source>
+    <scope>Public</scope>
+    <code>profile:CAP-CP:0.4</code>
+    <code>layer:SOREM:1.0</code>
+    <code>layer:EC-MSC-SMC:1.0</code>
+    <code>layer:WPAM:1.0</code>
+    <code>layer:EC-MSC-SMC:1.1</code>
+    <code>layer:SOREM:2.0</code>
+    <note>Service Notice - March 2022: The Environment and Climate Change Canada (ECCC) CAP Service has undergone a number of changes and additions to the Business that affects the CAP Service. 1) Tsunami Alerts are now part of the Service.  2) A problem with missing description text in some of the follow-up CAP messages is being addressed. For more information on these changes and other additions, you are invited to subscribe to the following mailing list: http://lists.cmc.ec.gc.ca/mailman/listinfo/dd_info | Notification de service - mars 2022: Le service du PAC d’Environnement et Changement climatique Canada (ECCC) a subi un certain nombre de changements et d’ajouts d’entreprise affectant le service du PAC. 1) Les alertes de tsunami font maintenant partie de ce service. 2) Un problème relié à du texte descriptif manquant dans certains messages de suivi du PAC est traité. Pour plus d’informations sur ces changements ainsi que sur d’autres ajouts, vous êtes invités à vous inscrire à la liste de diffusion suivante: http://lists.cmc.ec.gc.ca/mailman/listinfo/dd_info</note>
+    <references>cap-pac@canada.ca,urn:oid:2.49.0.1.124.4293389434.2022,2022-06-01T16:51:09-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.1112627152.2022,2022-06-01T16:52:09-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.0697180362.2022,2022-06-01T17:50:08-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.2846963516.2022,2022-06-01T17:51:08-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.2114476075.2022,2022-06-01T19:10:57-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.2016080369.2022,2022-06-01T19:11:57-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.3085242533.2022,2022-06-01T20:18:30-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.0749042879.2022,2022-06-01T21:10:50-00:00 cap-pac@canada.ca,urn:oid:2.49.0.1.124.0928608420.2022,2022-06-01T21:50:17-00:00</references>
+    <info>
+        <language>en-CA</language>
+        <category>Met</category>
+        <event>squall</event>
+        <responseType>AllClear</responseType>
+        <urgency>Past</urgency>
+        <severity>Minor</severity>
+        <certainty>Observed</certainty>
+        <audience>general public</audience>
+        <eventCode>
+            <valueName>profile:CAP-CP:Event:0.4</valueName>
+            <value>squall</value>
+        </eventCode>
+        <effective>2022-06-02T00:06:55-00:00</effective>
+        <expires>2022-06-02T01:06:55-00:00</expires>
+        <senderName>Environment Canada</senderName>
+        <headline>squall watch ended</headline>
+        <description>
+Squalls are no longer expected over the area.
+
+
+###
+</description>
+        <instruction/>
+        <web>http://weather.gc.ca/marine/index_e.html</web>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Type</valueName>
+            <value>watch</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Broadcast_Intrusive</valueName>
+            <value>no</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:SOREM:1.0:Broadcast_Immediately</valueName>
+            <value>No</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Parent_URI</valueName>
+            <value>msc/alert/environment/hazard/alert-3.0-ascii/consolidated-xml-2.0/20220602000655412/WH_13_73_CWTO/SQV/1651091891474120649202206010503_WH_13_73_CWTO/actual/en_proper_complete_c-fr_proper_complete_c/NinJo</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:CAP_count</valueName>
+            <value>A:3096 M:19476 C:34385</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Location_Status</valueName>
+            <value>ended</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Name</valueName>
+            <value>squall watch</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Coverage</valueName>
+            <value>Canadian portion of the Great Lakes and the Ontario portion of the St. Lawrence River</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Designation_Code</valueName>
+            <value>WH_13_73_CWTO</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:SOREM:2.0:WirelessImmediate</valueName>
+            <value>No</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Alert_Location_Status</valueName>
+            <value>ended</value>
+        </parameter>
+        <area>
+            <areaDesc>Eastern Lake Erie</areaDesc>
+            <polygon>42.3935,-80.0799 42.2591,-80.9327 42.66,-81.1553 42.784,-81.2109 42.7293,-80.5966 42.9012,-80.3291 42.9814,-79.6261 42.9623,-79.0529 42.9389,-78.8933 42.9052,-78.9059 42.8283,-78.9353 42.3935,-80.0799</polygon>
+            <geocode>
+                <valueName>layer:EC-MSC-SMC:1.0:CLC</valueName>
+                <value>002211</value>
+            </geocode>
+            <geocode>
+                <valueName>profile:CAP-CP:Location:0.3</valueName>
+                <value>none</value>
+            </geocode>
+        </area>
+        <area>
+            <areaDesc>Western Lake Erie</areaDesc>
+            <polygon>42.2478,-83.149 42.3244,-83.0787 42.3586,-82.9303 42.3512,-82.9263 42.3485,-82.9249 42.3422,-82.9211 42.3377,-82.9189 42.3254,-82.9097 42.295,-83.0518 42.2449,-83.0816 42.185,-83.0602 42.0629,-83.0565 42.0167,-82.9069 42.0946,-82.6165 42.2319,-82.3391 42.5988,-81.7125 42.784,-81.2109 42.66,-81.1553 42.2591,-80.9327 42.2075,-81.2457 41.6765,-82.3974 41.6765,-82.6797 41.8635,-83.0691 42.0409,-83.1496 42.1254,-83.1217 42.1748,-83.1339 42.2387,-83.128 42.2478,-83.149</polygon>
+            <geocode>
+                <valueName>layer:EC-MSC-SMC:1.0:CLC</valueName>
+                <value>002212</value>
+            </geocode>
+            <geocode>
+                <valueName>profile:CAP-CP:Location:0.3</valueName>
+                <value>none</value>
+            </geocode>
+        </area>
+    </info>
+    <info>
+        <language>fr-CA</language>
+        <category>Met</category>
+        <event>grains</event>
+        <responseType>AllClear</responseType>
+        <urgency>Past</urgency>
+        <severity>Minor</severity>
+        <certainty>Observed</certainty>
+        <audience>grand public</audience>
+        <eventCode>
+            <valueName>profile:CAP-CP:Event:0.4</valueName>
+            <value>squall</value>
+        </eventCode>
+        <effective>2022-06-02T00:06:55-00:00</effective>
+        <expires>2022-06-02T01:06:55-00:00</expires>
+        <senderName>Environnement Canada</senderName>
+        <headline>veille de grains annulée</headline>
+        <description>
+On ne prévoit plus de grains sur le secteur.
+
+###
+</description>
+        <instruction/>
+        <web>http://meteo.gc.ca/marine/index_f.html</web>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Type</valueName>
+            <value>watch</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Broadcast_Intrusive</valueName>
+            <value>no</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:SOREM:1.0:Broadcast_Immediately</valueName>
+            <value>No</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Parent_URI</valueName>
+            <value>msc/alert/environment/hazard/alert-3.0-ascii/consolidated-xml-2.0/20220602000655412/WH_13_73_CWTO/SQV/1651091891474120649202206010503_WH_13_73_CWTO/actual/en_proper_complete_c-fr_proper_complete_c/NinJo</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:CAP_count</valueName>
+            <value>A:3096 M:19476 C:34385</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Location_Status</valueName>
+            <value>ended</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Name</valueName>
+            <value>veille de grains</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.0:Alert_Coverage</valueName>
+            <value>secteur canadien des Grands Lacs et le secteur ontarien du fleuve Saint-Laurent</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Designation_Code</valueName>
+            <value>WH_13_73_CWTO</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:SOREM:2.0:WirelessImmediate</valueName>
+            <value>No</value>
+        </parameter>
+        <parameter>
+            <valueName>layer:EC-MSC-SMC:1.1:Alert_Location_Status</valueName>
+            <value>ended</value>
+        </parameter>
+        <area>
+            <areaDesc>lac Érié Est</areaDesc>
+            <polygon>42.3935,-80.0799 42.2591,-80.9327 42.66,-81.1553 42.784,-81.2109 42.7293,-80.5966 42.9012,-80.3291 42.9814,-79.6261 42.9623,-79.0529 42.9389,-78.8933 42.9052,-78.9059 42.8283,-78.9353 42.3935,-80.0799</polygon>
+            <geocode>
+                <valueName>layer:EC-MSC-SMC:1.0:CLC</valueName>
+                <value>002211</value>
+            </geocode>
+            <geocode>
+                <valueName>profile:CAP-CP:Location:0.3</valueName>
+                <value>none</value>
+            </geocode>
+        </area>
+        <area>
+            <areaDesc>lac Érié Ouest</areaDesc>
+            <polygon>42.2478,-83.149 42.3244,-83.0787 42.3586,-82.9303 42.3512,-82.9263 42.3485,-82.9249 42.3422,-82.9211 42.3377,-82.9189 42.3254,-82.9097 42.295,-83.0518 42.2449,-83.0816 42.185,-83.0602 42.0629,-83.0565 42.0167,-82.9069 42.0946,-82.6165 42.2319,-82.3391 42.5988,-81.7125 42.784,-81.2109 42.66,-81.1553 42.2591,-80.9327 42.2075,-81.2457 41.6765,-82.3974 41.6765,-82.6797 41.8635,-83.0691 42.0409,-83.1496 42.1254,-83.1217 42.1748,-83.1339 42.2387,-83.128 42.2478,-83.149</polygon>
+            <geocode>
+                <valueName>layer:EC-MSC-SMC:1.0:CLC</valueName>
+                <value>002212</value>
+            </geocode>
+            <geocode>
+                <valueName>profile:CAP-CP:Location:0.3</valueName>
+                <value>none</value>
+            </geocode>
+        </area>
+    </info>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#" Id="Environment Canada">
+<SignedInfo>
+<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+<SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+<Reference URI="">
+<Transforms>
+<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+</Transforms>
+<DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+<DigestValue>Mt4mckhiilUX7Cn0vA39NmH2e01FfCceilkhV3Yu6L4=</DigestValue>
+</Reference>
+</SignedInfo>
+<SignatureValue>nxk0DDuFDWPA5jWc4HlC4y5rYaorqOQBWbkvWQOF+c7OzxM+X/6hiN2xaCq1JRCq
+RyfINiqmH3sZw4qJJ9Qw+VrpNG5mZZdy6NWYJIdMQ/gAi31bLia72J9bPzae8wCD
++hqVcde5kkgXeQOXSYXnuzEejMsR7qVGQkJHh/vPWEipk/Hkr2SMV76/zUcTTSh1
+eFxG3zm4ZQTxsuLZTbYh8+bFeoVRW/NnnwfJ9ZxYY5C8uh3FFYHKNp/1em/eU6ji
+7PdxY9c14M8JI+sxsW52XYXU79uTAW171JvOdD8/rmtL/Lv9dGERM+nUUJsJiXSK
+M+OZiuWFgMWXHeGaZkIhFQ==</SignatureValue>
+<KeyInfo>
+<X509Data>
+<X509Certificate>MIIHQDCCBiigAwIBAgIQVM83tR+H9HQcCcfTpntZ0jANBgkqhkiG9w0BAQsFADCB
+ujELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUVudHJ1c3QsIEluYy4xKDAmBgNVBAsT
+H1NlZSB3d3cuZW50cnVzdC5uZXQvbGVnYWwtdGVybXMxOTA3BgNVBAsTMChjKSAy
+MDEyIEVudHJ1c3QsIEluYy4gLSBmb3IgYXV0aG9yaXplZCB1c2Ugb25seTEuMCwG
+A1UEAxMlRW50cnVzdCBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eSAtIEwxSzAeFw0y
+MTA0MDYxNDI4NTNaFw0yMjA1MDUxNDI4NTJaMGgxCzAJBgNVBAYTAkNBMQ8wDQYD
+VQQIEwZRdWViZWMxETAPBgNVBAcTCEdhdGluZWF1MRswGQYDVQQKExJFbnZpcm9u
+bWVudCBDYW5hZGExGDAWBgNVBAMMDyoud2VhdGhlci5nYy5jYTCCASIwDQYJKoZI
+hvcNAQEBBQADggEPADCCAQoCggEBAKN11t27vPi+ux94AEGuComDkX2rZYWwyE8s
+YMdJWg4TQxTljp4R8//VI9vO0c/1hH9AnkGCafH6k/9pVxkmJUZ32isJrTPS6SJK
+fejnFqVVjMEFpOkXcSy2LJ0I/FeaMJ4Ivs6dRGDSmnYQYFYHMvWGTEMBWCi2Q2G8
+4GSLKmKkJ6RC04nfyPEHuuyoS0APXnRDb4DZjVOxXb0zrpq1FvegWzCIpZiq3kCE
+JhXL3YSplB7yk1SWqjJROvj5AogyoLFiNW+S9Q1WrQ/efjxBYPmzj9VoWtcgezJB
+B4YJLP75XneF69Hxy+6OhitniSPMEtE1R0zB4G1axTNiWviH60sCAwEAAaOCA5Ew
+ggONMAwGA1UdEwEB/wQCMAAwHQYDVR0OBBYEFC4sBO19G7Jk7WQDbJicDuYRIyUY
+MB8GA1UdIwQYMBaAFIKicHTdvFM/z3vU981/p2DGCky/MGgGCCsGAQUFBwEBBFww
+WjAjBggrBgEFBQcwAYYXaHR0cDovL29jc3AuZW50cnVzdC5uZXQwMwYIKwYBBQUH
+MAKGJ2h0dHA6Ly9haWEuZW50cnVzdC5uZXQvbDFrLWNoYWluMjU2LmNlcjAzBgNV
+HR8ELDAqMCigJqAkhiJodHRwOi8vY3JsLmVudHJ1c3QubmV0L2xldmVsMWsuY3Js
+MIGdBgNVHREEgZUwgZKCDyoud2VhdGhlci5nYy5jYYINd2VhdGhlci5nYy5jYYIL
+bWV0ZW8uZ2MuY2GCDSoubWV0ZW8uZ2MuY2GCFSouYWxwaGEud2VhdGhlci5nYy5j
+YYITKi5hbHBoYS5tZXRlby5nYy5jYYIUKi5iZXRhLndlYXRoZXIuZ2MuY2GCEiou
+YmV0YS5tZXRlby5nYy5jYTAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYB
+BQUHAwEGCCsGAQUFBwMCMEwGA1UdIARFMEMwNwYKYIZIAYb6bAoBBTApMCcGCCsG
+AQUFBwIBFhtodHRwczovL3d3dy5lbnRydXN0Lm5ldC9ycGEwCAYGZ4EMAQICMIIB
+fwYKKwYBBAHWeQIEAgSCAW8EggFrAWkAdwBVgdTCFpA2AUrqC5tXPFPwwOQ4eHAl
+CBcvo6odBxPTDAAAAXinlhQbAAAEAwBIMEYCIQCjOHLzIFyW41zO3lT2ZShXTc8M
+hMigKHnFLVjQJnqRkgIhALIWlaEWCK6XITu3RUxkKlXtR56NDU3L7/iVG62O+Tdj
+AHYAUaOw9f0BeZxWbbg3eI8MpHrMGyfL956IQpoN/tSLBeUAAAF4p5YUFwAABAMA
+RzBFAiEAvm6gY+CUKh7AaiqwZ5TUcN/GtcMA2aHOM+FsXRJWJHsCIHjzurWrQ0aK
+IrMJsRdzMxUGavZ0IAv21eeqbrVoB+0hAHYARqVV63X6kSAwtaKJafTzfREsQXS+
+/Um4havy/HD+bUcAAAF4p5YUdgAABAMARzBFAiBbDo4h+iE+c+IlbPLFHEhyXWe9
+7C1O7KrFf76JQ6pcRgIhANVhTgXzbVEOM9MHz9Hp9NwmHhhuQUOE7zNrVDlrs5rG
+MA0GCSqGSIb3DQEBCwUAA4IBAQBPGB3a+dTaJ+raWqJKoMauRMr8WaskBj3ra1nH
+/VFeSvobDurUW59LZwY7Q8MAFDGGqr07yGZTBcb58EBJVFT55UHTRWrMJ6pfBApJ
+oYLi9ivyS/Tc4aUU/TZo8tTRUgkuEyw0gK029JAqqUUwKL0YwcRTlop5EpsittNV
+cQS83d+l0jhp7lRSIN8P6UlrteRP5l/87SHO4FO5j86DvVaRbjjxRHTVJ1ot0HiY
+qlg44k8IzfgTn9CzImGRqSc4C0CBK7VqXF2dFca9Q41+5FPvdt/reNViL3v+lPLM
+AojtY6LH2dFDcUqfz/f44MO0PKvlApB6GyCG+EfBTW02TtJx</X509Certificate>
+</X509Data>
+</KeyInfo>
+</Signature></alert>

@@ -8,6 +8,7 @@ import functools
 import pika
 import pika.spec
 from pika.exchange_type import ExchangeType
+from pika.adapters.asyncio_connection import AsyncioConnection
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -17,7 +18,7 @@ from .types import OnMessageCallback
 if t.TYPE_CHECKING:
     import pika.frame
     import pika.channel
-    from pika.adapters.select_connection import IOLoop
+    from asyncio.windows_events import _WindowsSelectorEventLoop
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class MessageConsumer:
 
         self.stats = TopicStatistics()
 
-        self._connection: pika.SelectConnection = None
+        self._connection: AsyncioConnection = None
         self._channel: "pika.channel.Channel" = None
         self._closing = False
         self._on_started_cb_fired = False
@@ -97,13 +98,13 @@ class MessageConsumer:
     def _consuming(self):
         return any([q.consuming for q in self._queues])
 
-    def connect(self) -> pika.SelectConnection:
+    def connect(self) -> AsyncioConnection:
         """This method connects to RabbitMQ, returning the connection handle. When the
         connection is established, the `on_connection_open` method will be invoked by
         pika.
         """
         logger.info(f"Connecting to {self._url}...")
-        return pika.SelectConnection(
+        return AsyncioConnection(
             parameters=pika.URLParameters(self._url),
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
@@ -119,7 +120,7 @@ class MessageConsumer:
             logger.info("Closing connection")
             self._connection.close()
 
-    def on_connection_open(self, _unused_connection: pika.SelectConnection):
+    def on_connection_open(self, _unused_connection: AsyncioConnection):
         """This method is called by pika once the connection to RabbitMQ has been
         established. It passes the handle to the connection object in case we need it,
         but in this case, we'll just mark it unused.
@@ -128,7 +129,7 @@ class MessageConsumer:
         self.open_channel()
 
     def on_connection_open_error(
-        self, _unused_connection: pika.SelectConnection, err: Exception
+        self, _unused_connection: AsyncioConnection, err: Exception
     ):
         """This method is called by pika if the connection to RabbitMQ can't be
         established.
@@ -137,7 +138,7 @@ class MessageConsumer:
         self.reconnect()
 
     def on_connection_closed(
-        self, _unused_connection: pika.SelectConnection, reason: Exception
+        self, _unused_connection: AsyncioConnection, reason: Exception
     ):
         """This method is invoked by pika when the connection to RabbitMQ is closed
         unexpectedly. Since it is unexpected, we will reconnect to RabbitMQ if it
@@ -146,7 +147,7 @@ class MessageConsumer:
         self._channel = None
         if self._closing:
             # NOTE: This isn't threadsafe. See `IOLoop.stop`'s docblock
-            t.cast("IOLoop", self._connection.ioloop).stop()
+            t.cast("_WindowsSelectorEventLoop", self._connection.ioloop).stop()
         else:
             logger.warning("Connection closed, reconnect necessary: %s", reason)
             self.reconnect()
@@ -396,11 +397,12 @@ class MessageConsumer:
 
     def run(self, on_started: t.Optional[t.Callable] = None):
         """Run the example consumer by connecting to RabbitMQ and then starting the
-        IOLoop to block and allow the SelectConnection to operate.
+        IOLoop to block and allow the AsyncioConnection to operate.
         """
         self._on_started_cb = on_started
         self._connection = self.connect()
-        t.cast("IOLoop", self._connection.ioloop).start()
+        loop = t.cast("_WindowsSelectorEventLoop", self._connection.ioloop)
+        loop.run_forever()
 
     def stop(self):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer with
@@ -416,9 +418,11 @@ class MessageConsumer:
             logger.info("Stopping")
             if self._consuming():
                 self.stop_consuming()
-                t.cast("IOLoop", self._connection.ioloop).start()
+                t.cast(
+                    "_WindowsSelectorEventLoop", self._connection.ioloop
+                ).run_forever()
             else:
-                t.cast("IOLoop", self._connection.ioloop).stop()
+                t.cast("_WindowsSelectorEventLoop", self._connection.ioloop).stop()
             logger.info("Stopped")
 
     def subscribe_to_topic(
