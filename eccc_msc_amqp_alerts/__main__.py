@@ -41,6 +41,13 @@ parser.add_argument(
     help="print statistics on exit",
     dest="print_stats",
 )
+parser.add_argument(
+    "-w",
+    "--web-server",
+    action="store_true",
+    help="EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets",
+    dest="web_server",
+)
 parsed_args = parser.parse_args()
 
 logging.basicConfig(
@@ -48,6 +55,11 @@ logging.basicConfig(
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
 
-from .listen import run  # noqa: E402
+if parsed_args.web_server:
+    from .webserver import app
 
-run(print_stats=parsed_args.print_stats)
+    app.run(debug=(parsed_args.loglevel == logging.DEBUG))
+else:
+    from .listen import run
+
+    run(print_stats=parsed_args.print_stats)

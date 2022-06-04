@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>ECCC MSC AMQP Alerts</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <!-- <link rel='stylesheet' type='text/css' media='screen' href='main.css'> -->
+    <!-- <script src='main.js'></script> -->
+    <style>
+        #current_bulletin {
+            float: left;
+            background: black;
+            color: #0f0;
+            padding: 15px;
+            min-width: 480px;
+            min-height: 600px;
+        }
+        #messages {
+            height: 600px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <h1>ECCC MSC AMQP Alerts (via Websockets)</h1>
+    <input id="disconnect" type="button" value="Disconnect" />
+    <input id="connect" type="button" value="Connect" />
+    <hr>
+    <code id="current_bulletin">Waiting...</code>
+    <ul id="messages">
+    </ul>
+    <script>
+        const humanReadyState = (ws) => {
+            switch(ws.readyState) {
+                case ws.CLOSED:
+                    return 'CLOSED';
+                case ws.CLOSING:
+                    return 'CLOSING';
+                case ws.CONNECTING:
+                    return 'CONNECTING';
+                case ws.OPEN:
+                    return 'OPEN';
+                default:
+                    return '<Unknown>';
+            }
+        }
+
+        const messages_ul_el = document.getElementById("messages");
+        const current_bulletin_el = document.getElementById("current_bulletin");
+
+        const receiveMessage = (payload) => {
+            const parsedPayload = JSON.parse(payload);
+            const newListItem  = document.createElement("li");
+            if (parsedPayload["sysmsg"]) {
+                newListItem.appendChild(document.createTextNode("RECV: " + parsedPayload["sysmsg"]));
+                // current_bulletin_el.innerText = `[SYSTEM MESSAGE] ${parsedPayload["sysmsg"]}`;
+            } else {
+                newListItem.appendChild(document.createTextNode(`RECV: [${parsedPayload['routing_key']}] ${parsedPayload["message"]}`));
+            }
+            messages_ul_el.appendChild(newListItem);
+            scrollBottom();
+            if (parsedPayload["body"]) {
+                current_bulletin_el.innerText = parsedPayload["body"];
+            }
+        }
+
+        const sysMessage = (messageStr) => {
+            const newListItem  = document.createElement("li");
+            const strongEl  = document.createElement("strong");
+            strongEl.appendChild(document.createTextNode(messageStr))
+            newListItem.appendChild(strongEl);
+            messages_ul_el.appendChild(newListItem);
+            scrollBottom();
+        }
+
+        const disconnect_btn = document.getElementById("disconnect");
+        disconnect_btn.onclick = (e) => {
+            e.preventDefault();
+            ws.close();
+            current_bulletin_el.innerText = 'Waiting...';
+        }
+        const connect_btn = document.getElementById("connect");
+        connect_btn.onclick = (e) => {
+            e.preventDefault();
+            if (ws.readyState == ws.CLOSED) {
+                ws = connectToWs();
+            } else {
+                sysMessage(`Cannot connect. Websocket not closed: ${humanReadyState(ws)}`)
+            }
+        }
+
+
+        const scrollBottom = () => {
+            messages_ul_el.scrollTop = messages_ul_el.scrollHeight;
+        }
+
+        const connectToWs = () => {
+            const _ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/ws');
+            _ws.onopen = (event) => {
+                sysMessage("Websocket opened!");
+            }
+            _ws.onclose = (event) => {
+                sysMessage("Websocket closed!");
+            }
+            _ws.onerror = (event) => {
+                sysMessage("Websocket error!");
+                console.error(event);
+            }
+            _ws.onmessage = (event) => {
+                receiveMessage(event.data);
+            };
+            return _ws;
+        }
+        let ws = connectToWs();
+    </script>
+</body>
+</html>

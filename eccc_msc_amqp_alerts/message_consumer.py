@@ -2,6 +2,7 @@
 # Copyright (C) 2022  Justin A. S. Bull
 # See __init__.py for full notice
 
+from asyncio import AbstractEventLoop
 import typing as t
 import logging
 import functools
@@ -13,7 +14,7 @@ from dataclasses import dataclass
 from collections import defaultdict
 
 from .config import config
-from .types import OnMessageCallback
+from .types import OnAnyMessageCallable, OnMessageCallback
 
 if t.TYPE_CHECKING:
     import pika.frame
@@ -71,7 +72,7 @@ class MessageConsumer:
     EXCHANGE = "xpublic"
     EXCHANGE_TYPE = ExchangeType.topic
 
-    def __init__(self) -> None:
+    def __init__(self, on_any_message: t.Optional[OnAnyMessageCallable] = None) -> None:
         self.should_reconnect = False
         self.was_consuming = False
 
@@ -81,6 +82,8 @@ class MessageConsumer:
         self._channel: "pika.channel.Channel" = None
         self._closing = False
         self._on_started_cb_fired = False
+
+        self.on_any_message = on_any_message
 
         self._queues: list[Queue] = []
 
@@ -98,7 +101,7 @@ class MessageConsumer:
     def _consuming(self):
         return any([q.consuming for q in self._queues])
 
-    def connect(self) -> AsyncioConnection:
+    def connect(self, loop: t.Optional[AbstractEventLoop] = None) -> AsyncioConnection:
         """This method connects to RabbitMQ, returning the connection handle. When the
         connection is established, the `on_connection_open` method will be invoked by
         pika.
@@ -109,6 +112,7 @@ class MessageConsumer:
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
             on_close_callback=self.on_connection_closed,
+            custom_ioloop=loop,
         )
 
     def close_connection(self):
@@ -395,14 +399,19 @@ class MessageConsumer:
         logger.info("Closing the channel")
         self._channel.close()
 
-    def run(self, on_started: t.Optional[t.Callable] = None):
+    def run(
+        self,
+        on_started: t.Optional[t.Callable] = None,
+        loop: t.Optional[AbstractEventLoop] = None,
+    ):
         """Run the example consumer by connecting to RabbitMQ and then starting the
         IOLoop to block and allow the AsyncioConnection to operate.
         """
         self._on_started_cb = on_started
-        self._connection = self.connect()
-        loop = t.cast("_WindowsSelectorEventLoop", self._connection.ioloop)
-        loop.run_forever()
+        self._connection = self.connect(loop=loop)
+        if loop is None:
+            ioloop = t.cast("_WindowsSelectorEventLoop", self._connection.ioloop)
+            ioloop.run_forever()
 
     def stop(self):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer with
@@ -457,6 +466,11 @@ class MessageConsumer:
         ):
             routing_key: str = method.routing_key
             self.stats.routing_keys[routing_key] += 1
-            func(channel, method, properties, body)
+            ret = func(channel, method, properties, body)
+            if self.on_any_message:
+                logger.info(
+                    f"Calling on_any_message: {self.on_any_message} with {(routing_key, body, 'ret...')}"
+                )
+                self.on_any_message(routing_key, body, ret)
 
         return wraps

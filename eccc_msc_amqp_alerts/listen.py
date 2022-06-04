@@ -64,8 +64,10 @@ def fetch_bulletin_text(body_timestamp, original_host: str, path: str):
         return
 
     logger.info("Fetched Bulletin:")
-    print(response.text)
-    recent_bulletins.append(response.text)
+    bulletin_text = response.text
+    print(bulletin_text)
+    recent_bulletins.append(bulletin_text)
+    return bulletin_text
 
 
 def on_bulletin_message(
@@ -82,9 +84,10 @@ def on_bulletin_message(
     ).rstrip()
     logger.debug(f"WMO GTS Abbreviated Header Section: {wmo_gts_comms_header}")
     logger.info(f"WMO GTS Header:\n{pretty_wmo_header(wmo_gts_comms_header)}")
-    fetch_bulletin_text(timestamp, host, path)
+    text = fetch_bulletin_text(timestamp, host, path)
     logger.info("End of bulletin")
     # logger.debug("on_bulletin_message complete")
+    return text
 
 
 def on_alert_message(
@@ -99,30 +102,32 @@ def on_alert_message(
     logger.debug("on_alert_message complete")
 
 
-def run(print_stats=False):
-    consumer = MessageConsumer()
-    try:
-        if config.bulletins:
-            if config.bulletin_topics == ["all"]:
-                consumer.subscribe_to_topic(
-                    name="bulletins_all",
-                    routing_key="*.*.bulletins.alphanumeric.*.#",
-                    callback=on_bulletin_message,
-                )
-            else:
-                for topic in config.bulletin_topics:
-                    consumer.subscribe_to_topic(
-                        name=f"bulletins_{topic}",
-                        routing_key=f"*.*.bulletins.alphanumeric.*.{topic}.#",
-                        callback=on_bulletin_message,
-                    )
-        if config.alerts:
-            consumer.subscribe_to_topic(
-                name="alerts",
-                routing_key="*.*.alerts.#",
-                callback=on_alert_message,
-            )
+consumer = MessageConsumer()
 
+if config.bulletins:
+    if config.bulletin_topics == ["all"]:
+        consumer.subscribe_to_topic(
+            name="bulletins_all",
+            routing_key="*.*.bulletins.alphanumeric.*.#",
+            callback=on_bulletin_message,
+        )
+    else:
+        for topic in config.bulletin_topics:
+            consumer.subscribe_to_topic(
+                name=f"bulletins_{topic}",
+                routing_key=f"*.*.bulletins.alphanumeric.*.{topic}.#",
+                callback=on_bulletin_message,
+            )
+if config.alerts:
+    consumer.subscribe_to_topic(
+        name="alerts",
+        routing_key="*.*.alerts.#",
+        callback=on_alert_message,
+    )
+
+
+def run(print_stats=False):
+    try:
         print("🔌 Connecting... ", end="", flush=True)
         consumer.run(on_started=lambda: print("OK! Now listening for messages... 👂"))
     except KeyboardInterrupt:
