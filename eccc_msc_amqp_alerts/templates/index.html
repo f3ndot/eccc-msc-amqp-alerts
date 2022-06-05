@@ -13,7 +13,7 @@
             background: black;
             color: #0f0;
             padding: 15px;
-            min-width: 480px;
+            min-width: 500px;
             min-height: 600px;
         }
         #messages {
@@ -49,6 +49,25 @@
         const messages_ul_el = document.getElementById("messages");
         const current_bulletin_el = document.getElementById("current_bulletin");
 
+        let slowTextTimeouts = [];
+
+        const slowBulletinText = (text, speed = 20) => {
+            slowTextTimeouts.forEach((timeout) => {
+                clearTimeout(timeout);
+            })
+            slowTextTimeouts = [];
+            current_bulletin_el.innerText = '';
+            const lines = text.split(/\r?\n/);
+            for(i = 0; i < lines.length; i++) {
+                const myLine = lines[i];
+                const timeout = setTimeout((line) => {
+                    const existingText = current_bulletin_el.innerText;
+                    current_bulletin_el.innerText = `${existingText}${line}\n`;
+                }, speed * i, myLine);
+                slowTextTimeouts.push(timeout);
+            }
+        }
+
         const receiveMessage = (payload) => {
             const parsedPayload = JSON.parse(payload);
             const newListItem  = document.createElement("li");
@@ -61,7 +80,8 @@
             messages_ul_el.appendChild(newListItem);
             scrollBottom();
             if (parsedPayload["body"]) {
-                current_bulletin_el.innerText = parsedPayload["body"];
+                slowBulletinText(parsedPayload["body"]);
+                // current_bulletin_el.innerText = parsedPayload["body"];
             }
         }
 

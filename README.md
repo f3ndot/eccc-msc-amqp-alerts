@@ -37,7 +37,7 @@ poetry run python -m eccc_msc_amqp_alerts -v
 You should probably use `-v` when running the program.
 
 ```
-usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s]
+usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s] [-w]
 
 Listen to and print alerts and bulletins from Environment and Climate Change Canada's 
 Metereological Service Canada Datamart AMQP server
@@ -47,6 +47,7 @@ optional arguments:
   -d, --debug        print lots of debugging statements
   -v, --verbose      be verbose, show what's going on
   -s, --print-stats  print statistics on exit
+  -w, --web-server   EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets
 
 Copyright (C) 2022  Justin A. S. Bull
 
@@ -59,9 +60,9 @@ welcome to redistribute it under certain conditions.
 
 ## TODO
 
+- Make web-server mode pretty and fun. Show decoded WHO AHL in a spot
 - Make this an optionally importable Python library and people pass in their callback hooks?
-- Settle on a web framework for non-library mode
-- Figure out data structure and pattern for efficiently passing bulletins/alert to web framework
+- Figure out data structure and pattern for efficiently passing bulletins/alert to web framework (`pika` seems to fight with Quart. Consider `aio-pika` instead?)
 - Settle many queues vs 1 queue with client-side filtering debate
 - Finish parsing alert CAP files and display a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
 - Handle recovering previously declared queues from a former session (delete or purge first?)
