@@ -19,7 +19,6 @@ from .types import OnAnyMessageCallable, OnMessageCallback
 if t.TYPE_CHECKING:
     import pika.frame
     import pika.channel
-    from asyncio.windows_events import _WindowsSelectorEventLoop
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +150,7 @@ class MessageConsumer:
         self._channel = None
         if self._closing:
             # NOTE: This isn't threadsafe. See `IOLoop.stop`'s docblock
-            t.cast("_WindowsSelectorEventLoop", self._connection.ioloop).stop()
+            self._connection.ioloop.stop()
         else:
             logger.warning("Connection closed, reconnect necessary: %s", reason)
             self.reconnect()
@@ -410,8 +409,7 @@ class MessageConsumer:
         self._on_started_cb = on_started
         self._connection = self.connect(loop=loop)
         if loop is None:
-            ioloop = t.cast("_WindowsSelectorEventLoop", self._connection.ioloop)
-            ioloop.run_forever()
+            self._connection.ioloop.run_forever()
 
     def stop(self):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer with
@@ -427,11 +425,10 @@ class MessageConsumer:
             logger.info("Stopping")
             if self._consuming():
                 self.stop_consuming()
-                t.cast(
-                    "_WindowsSelectorEventLoop", self._connection.ioloop
-                ).run_forever()
+                # TODO: guard this if `run()` was passed in a `loop` arg
+                # self._connection.ioloop.run_forever()
             else:
-                t.cast("_WindowsSelectorEventLoop", self._connection.ioloop).stop()
+                self._connection.ioloop.stop()
             logger.info("Stopped")
 
     def subscribe_to_topic(

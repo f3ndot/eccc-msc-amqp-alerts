@@ -8,7 +8,7 @@ repository = "https://github.com/f3ndot/eccc-msc-amqp-alerts"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 pika = "^1.2.0"
 requests = "^2.26.0"
 gtstowis2 = {git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "main"}

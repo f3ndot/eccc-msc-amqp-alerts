@@ -43,11 +43,11 @@ class ConsumerOrchestrator:
                     f"[{datetime.now()}][{self}] SKIPPING PUSH {(routing_key, body, f'ret_size={ret_len}')} for full websocket queue {ws_queue}"
                 )
 
-    async def run(self):
+    async def run(self, loop):
         # try:
         print("🔌 Connecting... ", end="", flush=True)
         self.consumer.run(
-            loop=asyncio.get_event_loop(),
+            loop=loop,
             on_started=lambda: print("OK! Now listening for messages... 👂"),
         )
         # except asyncio.CancelledError:
@@ -63,12 +63,19 @@ class ConsumerOrchestrator:
     #         await websocket.send(data[0])
 
 
-consumer_orc = ConsumerOrchestrator(consumer)
-
-
 @app.before_serving
 async def start_amqp_listening():
-    app.add_background_task(consumer_orc.run)
+    logger.info("Starting AMQP listening alongside Quart")
+    loop = asyncio.get_event_loop()
+    app.consumer_orc = ConsumerOrchestrator(consumer)
+    loop.create_task(app.consumer_orc.run(loop=loop))
+
+
+@app.after_serving
+async def shutdown():
+    logger.info("Gracefully stopping AMQP listening ...")
+    app.consumer_orc.consumer.stop()
+    logger.info("STOPPED AMQP listening")
 
 
 @app.route("/")
@@ -79,10 +86,10 @@ async def index():
 @app.route("/current_queues")
 async def current_queues():
     websocket_queues = {}
-    for wsq in consumer_orc.websockets:
+    for wsq in app.consumer_orc.websockets:
         websocket_queues[repr(wsq)] = wsq.qsize()
     return {
-        "dump_queue": consumer_orc.dump_queue.qsize(),
+        "dump_queue": app.consumer_orc.dump_queue.qsize(),
         "websocket_queues": websocket_queues,
     }
 
@@ -92,7 +99,7 @@ async def dump():
     items = []
     try:
         while True:
-            item = consumer_orc.dump_queue.get_nowait()
+            item = app.consumer_orc.dump_queue.get_nowait()
             items.append(
                 {
                     "routing_key": item[0],
@@ -109,7 +116,7 @@ async def ws():
     queue: OnMessageAIOQueue = asyncio.Queue(maxsize=1)
     try:
         print(f"Adding {queue}")
-        consumer_orc.websockets.add(queue)
+        app.consumer_orc.websockets.add(queue)
         # await consumer_orc.send_websocket_from_queue_get(queue)
         await websocket.send(
             json.dumps(
@@ -130,4 +137,4 @@ async def ws():
             await websocket.send(payload)
     finally:
         print(f"Removing {queue}")
-        consumer_orc.websockets.remove(queue)
+        app.consumer_orc.websockets.remove(queue)
