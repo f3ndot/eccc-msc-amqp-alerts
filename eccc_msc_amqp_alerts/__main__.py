@@ -54,6 +54,9 @@ logging.basicConfig(
     level=parsed_args.loglevel,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
+if parsed_args.loglevel <= logging.INFO:
+    # It's useful to see heartbeats run at an info level
+    logging.getLogger("pika.heartbeat").setLevel(logging.DEBUG)
 
 if parsed_args.web_server:
     from .webserver import app
