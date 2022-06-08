@@ -4,8 +4,6 @@
 
 import os
 import logging
-from re import T
-from tkinter import N
 from lxml import etree
 
 logger = logging.getLogger(__name__)
