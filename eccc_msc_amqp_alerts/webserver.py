@@ -13,7 +13,13 @@ from .message_consumer import MessageConsumer
 from .listen import consumer
 
 logger = logging.getLogger(__name__)
-app = Quart(__name__)
+
+
+class QuartWithConsumerOrc(Quart):
+    consumer_orc: "ConsumerOrchestrator"
+
+
+app = QuartWithConsumerOrc(__name__)
 
 
 class ConsumerOrchestrator:
@@ -73,9 +79,15 @@ async def start_amqp_listening():
 
 @app.after_serving
 async def shutdown():
-    logger.info("Gracefully stopping AMQP listening ...")
-    app.consumer_orc.consumer.stop()
-    logger.info("STOPPED AMQP listening")
+    max_wait_secs = 5
+    logger.info(
+        f"Gracefully stopping AMQP listening (waiting up to {max_wait_secs}s)..."
+    )
+    try:
+        await app.consumer_orc.consumer.stop_and_wait(timeout=max_wait_secs)
+        logger.info("Gracefully STOPPED AMQP listening!")
+    except asyncio.TimeoutError:
+        logger.info(f"TIMED OUT! Waited {max_wait_secs}s. Forcefully shutting down...")
 
 
 @app.route("/")

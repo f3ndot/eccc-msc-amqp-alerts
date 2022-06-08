@@ -3,6 +3,7 @@
 # See __init__.py for full notice
 
 from asyncio import AbstractEventLoop
+import asyncio
 import typing as t
 import logging
 import functools
@@ -150,7 +151,9 @@ class MessageConsumer:
         self._channel = None
         if self._closing:
             # NOTE: This isn't threadsafe. See `IOLoop.stop`'s docblock
-            self._connection.ioloop.stop()
+            # TODO: Disable if externally provided ioloop
+            # self._connection.ioloop.stop()
+            pass
         else:
             logger.warning("Connection closed, reconnect necessary: %s", reason)
             self.reconnect()
@@ -430,6 +433,36 @@ class MessageConsumer:
             else:
                 self._connection.ioloop.stop()
             logger.info("Stopped")
+
+    def _get_con_state(self):
+        return self._connection._STATE_NAMES[self._connection.connection_state]
+
+    async def _log_con_state_forever(self, every=1):
+        while True:
+            logger.info(
+                f"Waiting for AMQP shutdown... Connection state: {self._get_con_state()}"
+            )
+            await asyncio.sleep(0.5)
+
+    async def _stop_and_wait(self):
+        _previous_state = self._get_con_state()
+        self.stop()
+        task = asyncio.create_task(self._log_con_state_forever())
+        while True:
+            _current_state = self._get_con_state()
+            if _previous_state != _current_state:
+                _previous_state = self._get_con_state()
+                logger.info(
+                    f"Waiting for AMQP shutdown... New connection state: {self._get_con_state()}"
+                )
+            await asyncio.sleep(0)
+            if self._connection.is_closed:
+                logger.info(f"AMQP SHUT DOWN! Connection is {self._get_con_state()}")
+                task.cancel()
+                return True
+
+    async def stop_and_wait(self, timeout: float):
+        await asyncio.wait_for(self._stop_and_wait(), timeout=timeout)
 
     def subscribe_to_topic(
         self,
