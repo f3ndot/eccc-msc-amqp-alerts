@@ -12,7 +12,7 @@
         body {
             font-family: 'IBM Plex Mono', monospace;
             color: white;
-            background: #15221b;
+            background: #080c0a;
         }
         body a {
             /* color: green; */
@@ -72,6 +72,9 @@
 
             overflow-y: scroll;
             overflow-x: visible;
+
+            /* border: 1px solid #97ca2e11; */
+            border: 1px solid black;
         }
         .terminal span::selection, .terminal li::selection {
             background-color:#0c0;
@@ -203,7 +206,7 @@
             <button data-dismiss="modal" class="close-x">×</button>
             <h1>What is this?</h1>
             <p>A fun project thanks to the open data from Environment and Climate Change Canada's Meteorological Service of Canada.</p>
-            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteoroligical bulletins.</p>
+            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteorological bulletins.</p>
             <p>Occasionally it'll display the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
             <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions. What you see here is near instant from the issuing stations and can often beat sites like weather.ca or what gets pushed to your phone.</p>
             <p><button data-dismiss="modal">Ok, cool</button></p>
