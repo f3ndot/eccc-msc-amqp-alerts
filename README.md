@@ -39,7 +39,7 @@ You should probably use `-v` when running the program.
 ```
 usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s] [-w]
 
-Listen to and print alerts and bulletins from Environment and Climate Change Canada's 
+Listen to and print alerts and bulletins from Environment and Climate Change Canada's
 Metereological Service Canada Datamart AMQP server
 
 optional arguments:
@@ -62,8 +62,6 @@ welcome to redistribute it under certain conditions.
 
 - Make web-server mode pretty and fun. Show decoded WHO AHL in a spot
 - Make this an optionally importable Python library and people pass in their callback hooks?
-- Figure out data structure and pattern for efficiently passing bulletins/alert to web framework (`pika` seems to fight with Quart. Consider `aio-pika` instead?)
-- Settle many queues vs 1 queue with client-side filtering debate
 - Finish parsing alert CAP files and display a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
 - Handle recovering previously declared queues from a former session (delete or purge first?)
 - Recover from 'soft fails' with Pika (eg restarting a channel or connection)

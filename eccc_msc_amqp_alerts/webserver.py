@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
+from typing import Any, Optional
 from quart import Quart, render_template, websocket
 
 from .types import OnMessageAIOQueue
@@ -24,12 +25,14 @@ app = QuartWithConsumerOrc(__name__)
 
 class ConsumerOrchestrator:
     def __init__(self, consumer: MessageConsumer) -> None:
+        self.last_bulletin: tuple[str, bytes, Any] | None = None
         self.consumer = consumer
         self.consumer.on_any_message = self.push_to_websocket_queue
         self.websockets: set[OnMessageAIOQueue] = set()
         self.dump_queue: OnMessageAIOQueue = asyncio.Queue(maxsize=100)
 
     def push_to_websocket_queue(self, routing_key: str, body: bytes, ret):
+        self.last_bulletin = (routing_key, body, ret)
         ret_len = len(ret) if ret else "N/A"
         logger.info(
             f"push_to_websocket_queue called with {(routing_key, body, f'ret_size={ret_len}')}"
@@ -137,6 +140,21 @@ async def ws():
                 }
             )
         )
+        if app.consumer_orc.last_bulletin is not None:
+            await websocket.send(
+                json.dumps(
+                    {"sysmsg": "Loading last received bulletin while you wait :-)"}
+                )
+            )
+            item = app.consumer_orc.last_bulletin
+            payload = json.dumps(
+                {
+                    "routing_key": item[0],
+                    "message": item[1].decode(),
+                    "body": item[2],
+                }
+            )
+            await websocket.send(payload)
         while True:
             item = await queue.get()
             payload = json.dumps(
