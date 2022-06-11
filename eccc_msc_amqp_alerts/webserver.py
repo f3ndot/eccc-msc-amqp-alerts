@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from quart import Quart, render_template, websocket
 
 from .types import OnMessageAIOQueue
@@ -136,7 +136,7 @@ async def ws():
         await websocket.send(
             json.dumps(
                 {
-                    "sysmsg": "Hello from websocket server! Queue provisioned, awaiting messages from AMQP consumer code"
+                    "sysmsg": "Hello from websocket server! Queue provisioned, awaiting messages from live feed"
                 }
             )
         )

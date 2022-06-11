@@ -60,7 +60,8 @@ welcome to redistribute it under certain conditions.
 
 ## TODO
 
-- Make web-server mode pretty and fun. Show decoded WHO AHL in a spot
+- Show decoded WHO AHL in a spot
+- Consider spawning queue listener and webserver as multiple processes for better throughput on `all` topics
 - Make this an optionally importable Python library and people pass in their callback hooks?
 - Finish parsing alert CAP files and display a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
 - Handle recovering previously declared queues from a former session (delete or purge first?)

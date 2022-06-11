@@ -85,6 +85,8 @@
 
             min-width: 620px;
             min-height: 200px;
+
+            width: 100%;
         }
         .caret {
             background-color:transparent;
@@ -102,15 +104,16 @@
             padding-left: 30px;
             margin-left: 10px;
             list-style: symbols(cyclic "*");
+            width: 100%;
         }
-        #messages li.sysmsg {
+        #messages li.sysmsg, #current_wmo_al {
             list-style: none;
             background-color:#0c0;
             text-shadow: none;
             color:black;
             text-align: center;
+            box-shadow: 0 0 5px 0 #074a2a;
         }
-
 
         footer {
             text-align: center;
@@ -175,6 +178,7 @@
     <hr />
     <div class="flex-container">
         <div id="terminal" class="terminal">
+            <div id="current_wmo_al"></div>
             <span id="current_bulletin">Waiting... </span>
             <span class="caret">&nbsp;</span>
             <div class="scanlines"></div>
@@ -239,6 +243,7 @@
         }
 
         const messages_ul_el = document.getElementById("messages");
+        const current_wmo_al = document.getElementById("current_wmo_al");
         const current_bulletin_el = document.getElementById("current_bulletin");
         const terminal_el = document.getElementById("terminal");
 
@@ -249,7 +254,7 @@
                 clearTimeout(timeout);
             })
             slowTextTimeouts = [];
-            // TODO: append ahl with styling without inntertext clobbing
+            current_wmo_al.innerText = `[${ahl}]`;
             current_bulletin_el.innerText = '';
             const lines = text.split(/\r?\n/);
             for(i = 0; i < lines.length; i++) {
