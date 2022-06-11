@@ -3,7 +3,7 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Alphanumeric Warning Bulletins and Alerts</title>
+    <title>Alphanumeric Warning Bulletins and Alerts (Beta)</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +20,10 @@
         }
         body a:hover {
             color: greenyellow;
+        }
+        .orange {
+            /* color: rgb(255, 187, 0); */
+            color: rgb(255, 149, 0);
         }
         .title {
             margin-bottom: 0;
@@ -141,7 +145,7 @@
             padding: 20px 50px;
             margin: 30px auto;
             background: black;
-            width: 600px;
+            max-width: 600px;
             max-height: 80%;
             overflow-y: scroll;
             border: 1px solid #0c0;
@@ -174,7 +178,7 @@
     </style>
 </head>
 <body>
-    <h1 class="title">Alphanumeric Warning Bulletins and Alerts</h1>
+    <h1 class="title">Alphanumeric Warning Bulletins and Alerts <span class="orange">(Beta)</span></h1>
     <h3 class="subtitle">from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 5px;" data-show="modal">[?]</a></h3>
     <input id="disconnect" type="button" value="Disconnect" />
     <input id="connect" type="button" value="Connect" />
@@ -205,10 +209,11 @@
         <div class="modal-content">
             <button data-dismiss="modal" class="close-x">×</button>
             <h1>What is this?</h1>
+            <p class="orange">This is still experimental software!</p>
             <p>A fun project thanks to the open data from Environment and Climate Change Canada's Meteorological Service of Canada.</p>
-            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteorological bulletins.</p>
+            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteorological bulletins from Canada and the world.</p>
             <p>Occasionally it'll display the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
-            <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions. What you see here is near instant from the issuing stations and can often beat sites like weather.ca or what gets pushed to your phone.</p>
+            <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions. What you see here is near instant from the issuing processing centre and can often beat sites like weather.ca or what gets pushed to your phone.</p>
             <p><button data-dismiss="modal">Ok, cool</button></p>
         </div>
     </div>
