@@ -21,6 +21,19 @@
         body a:hover {
             color: greenyellow;
         }
+        .title {
+            margin-bottom: 0;
+        }
+        .subtitle {
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+        hr {
+            border-top: 1px solid rgba(0, 0, 0, 0.75);
+            border-right: 1px solid rgba(0, 0, 0, 0.75);
+            border-bottom: 1px solid #074a2a;
+            border-left: 1px solid #074a2a;
+        }
         .flex-container {
             display: flex;
             flex-direction: row;
@@ -70,7 +83,7 @@
             margin-bottom:0;
             margin-top:0;
 
-            min-width: 550px;
+            min-width: 620px;
             min-height: 200px;
         }
         .caret {
@@ -155,8 +168,8 @@
     </style>
 </head>
 <body>
-    <h1>Alphanumeric Warning Bulletins and Alerts</h1>
-    <h3>from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 5px;" data-show="modal">[?]</a></h3>
+    <h1 class="title">Alphanumeric Warning Bulletins and Alerts</h1>
+    <h3 class="subtitle">from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 5px;" data-show="modal">[?]</a></h3>
     <input id="disconnect" type="button" value="Disconnect" />
     <input id="connect" type="button" value="Connect" />
     <hr />
@@ -186,7 +199,8 @@
             <button data-dismiss="modal" class="close-x">×</button>
             <h1>What is this?</h1>
             <p>A fun project thanks to the open data from Environment and Climate Change Canada's Meteorological Service of Canada.</p>
-            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteoroligical bulletins. Additionally the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
+            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteoroligical bulletins.</p>
+            <p>Occasionally it'll display the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
             <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions. What you see here is near instant from the issuing stations and can often beat sites like weather.ca or what gets pushed to your phone.</p>
             <p><button data-dismiss="modal">Ok, cool</button></p>
         </div>
