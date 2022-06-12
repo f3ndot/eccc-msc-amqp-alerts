@@ -13,6 +13,7 @@
             font-family: 'IBM Plex Mono', monospace;
             color: white;
             background: #080c0a;
+            margin: 15px;
         }
         body a {
             /* color: green; */
@@ -41,7 +42,7 @@
         .flex-container {
             display: flex;
             flex-direction: row;
-            /* flex-wrap: nowrap; */
+            flex-wrap: wrap;
             /* height: 100vh; */
         }
         .scanlines {
@@ -62,60 +63,67 @@
         }
 
         .terminal {
-            color:#0d0;
+            -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+            -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+            box-sizing: border-box;         /* Opera/IE 8+ */
+
+            color:#0d4; /* consider #0d4 */
             font-family:VT323,monospace;
-            /* font-family:VT323,monospace; */
-            font-size:1.4em;
-            background: #001a00;
+            font-size: 1.6vw;
+            /* background: #00331a; */
+            background: #002915;
             border-radius: 10px;
-            padding: 15px;
             text-shadow: 0 0.2rem 0.5rem #074a2a;
             position: relative;
 
-            box-shadow: inset 0 0 100px 0 rgba(0,0,0,0.3);
+            /* TODO: find a way to make it relative to screen size */
+            box-shadow: inset 0 0 500px 0px rgba(0,0,0,1);
 
-            /* overflow-y: scroll; */
-            /* overflow-x: visible; */
+            overflow: hidden; /* clips radius and shadows */
 
-            /* border: 1px solid #97ca2e11; */
-            border: 1px solid black;
+            padding: 10px;
+            border: 1px solid #074a2a;
+            /* border: 1px solid black; */
         }
         .terminal span::selection, .terminal li::selection {
-            background-color:#0c0;
+            background-color:#0d4;
             text-shadow: none;
             color:black;
         }
-
         #terminal {
             margin-bottom:0;
             margin-top:0;
 
-            min-width: 620px;
+            /* min-width: 620px; */
             min-height: 200px;
 
-            width: 100%;
+            /* margin-left: 0.5%; */
+            margin-right: 0.5%;
+            width: 49.5%;
         }
         .caret {
             background-color:transparent;
             animation:blink 1s steps(1,start) infinite;
         }
         @keyframes blink{
-           50%{background-color:#0d0;}
+           50%{background-color:#0d4;}
         }
 
-        #messages {
-            /* height: 600px; */
-            /* overflow-y: scroll; */
-            margin: 0;
-            font-size: 1.2em;
-            padding-left: 30px;
-            margin-left: 10px;
-            list-style: symbols(cyclic "*");
-            width: 100%;
+        #messages_container {
+            margin-left: 0.5%;
+            /* margin-right: 0.5%; */
+            width: 49.5%;
+            padding-left: 0;
         }
-        #messages li.sysmsg, #current_wmo_al {
+        #messages {
+            margin: 0;
+            padding-left: 2vw;
+            word-wrap: break-word;
+            list-style: symbols(cyclic "*");
+        }
+        #messages_container li.sysmsg, #current_wmo_al {
             list-style: none;
-            background-color:#0c0;
+            background-color:#0d4;
             text-shadow: none;
             color:black;
             text-align: center;
@@ -210,9 +218,11 @@
             <span class="caret">&nbsp;</span>
             <div class="scanlines"></div>
         </div>
-        <ul id="messages" class="terminal">
-            <div class="scanlines"></div>
-        </ul>
+        <div id="messages_container" class="terminal">
+            <ul id="messages">
+                <div class="scanlines"></div>
+            </ul>
+        </div>
     </div>
     <hr />
     <footer>
@@ -344,6 +354,7 @@
         disconnect_btn.onclick = (e) => {
             e.preventDefault();
             ws.close();
+            region_filter_el.value = 'any';
             current_bulletin_el.innerText = 'Waiting...';
         }
         const connect_btn = document.getElementById("connect");
