@@ -176,7 +176,10 @@ async def handle_recv_ws(conn: WebsocketConnection):
         if "region_filter" in data:
             conn.config["region_filter"] = data["region_filter"]
             await websocket.send_json(
-                {"sysmsg": f"Changed to region filter to {data['region_filter']}"}
+                {
+                    "sysmsg": f"Changed to region filter to {data['region_filter']}",
+                    "region_filter": data["region_filter"],
+                }
             )
 
 
