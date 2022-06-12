@@ -101,19 +101,37 @@
             margin-right: 0.5%;
             width: 49.5%;
         }
+        #messages_container {
+            margin-left: 0.5%;
+            /* margin-right: 0.5%; */
+            width: 49.5%;
+            padding-left: 0;
+        }
+        @media only screen and (max-width: 800px) {
+            #messages_container, #terminal {
+                width: 100%;
+                margin-left: 0;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            .terminal {
+                font-size: 3.35vw;
+            }
+        }
+        @media only screen and (max-width: 425px) {
+            .terminal {
+                padding: 5px;
+            }
+            body {
+                margin: 5px;
+            }
+        }
         .caret {
             background-color:transparent;
             animation:blink 1s steps(1,start) infinite;
         }
         @keyframes blink{
            50%{background-color:#0d4;}
-        }
-
-        #messages_container {
-            margin-left: 0.5%;
-            /* margin-right: 0.5%; */
-            width: 49.5%;
-            padding-left: 0;
         }
         #messages {
             margin: 0;
