@@ -75,11 +75,12 @@
             border-radius: 10px;
             text-shadow: 0 0.2rem 0.5rem #074a2a;
             position: relative;
-
             /* TODO: find a way to make it relative to screen size */
             box-shadow: inset 0 0 500px 0px rgba(0,0,0,1);
 
             overflow: hidden; /* clips radius and shadows */
+
+            line-height: 1;
 
             padding: 10px;
             border: 1px solid #074a2a;
@@ -102,6 +103,7 @@
             width: 49.5%;
         }
         #messages_container {
+            font-size: 1.2vw;
             margin-left: 0.5%;
             /* margin-right: 0.5%; */
             width: 49.5%;
@@ -122,6 +124,9 @@
             .terminal {
                 font-size: 3.2vw;
             }
+            #messages_container {
+                font-size: 2.4vw;
+            }
         }
         @media only screen and (max-width: 425px) {
             .terminal {
@@ -129,6 +134,9 @@
             }
             body {
                 margin: 5px;
+            }
+            #messages_container {
+                font-size: 3.2vw; /* too small otherwise */
             }
         }
         .caret {
