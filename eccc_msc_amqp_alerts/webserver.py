@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 from quart import Quart, render_template, websocket
 
 from .types import OnMessageAIOQueue
@@ -126,11 +126,19 @@ async def dump():
         return {"items": items}
 
 
+async def ws_keepalive():
+    while True:
+        await asyncio.sleep(45)
+        logger.info("Sending WS heartbeat...")
+        await websocket.send(json.dumps({"heartbeat": str(datetime.now())}))
+
+
 @app.websocket("/ws")
 async def ws():
+    task: Optional[asyncio.Task] = None
     queue: OnMessageAIOQueue = asyncio.Queue(maxsize=1)
     try:
-        print(f"Adding {queue}")
+        logger.info(f"Adding {queue}")
         app.consumer_orc.websockets.add(queue)
         # await consumer_orc.send_websocket_from_queue_get(queue)
         await websocket.send(
@@ -140,6 +148,7 @@ async def ws():
                 }
             )
         )
+        task = asyncio.create_task(ws_keepalive())
         if app.consumer_orc.last_bulletin is not None:
             await websocket.send(
                 json.dumps(
@@ -166,5 +175,8 @@ async def ws():
             )
             await websocket.send(payload)
     finally:
-        print(f"Removing {queue}")
+        logger.info("stopping ws keepalive")
+        if task:
+            task.cancel()
+        logger.info(f"Removing {queue}")
         app.consumer_orc.websockets.remove(queue)
