@@ -107,7 +107,12 @@
             width: 49.5%;
             padding-left: 0;
         }
-        @media only screen and (max-width: 800px) {
+        @media only screen and (min-width: 1441px) {
+            .terminal {
+                font-size: 1.5em; /* looks ridic on big screens */
+            }
+        }
+        @media only screen and (max-width: 1023px) {
             #messages_container, #terminal {
                 width: 100%;
                 margin-left: 0;
@@ -115,7 +120,7 @@
                 margin-bottom: 10px;
             }
             .terminal {
-                font-size: 3.35vw;
+                font-size: 3.2vw;
             }
         }
         @media only screen and (max-width: 425px) {
@@ -176,6 +181,18 @@
             overflow-y: scroll;
             border: 1px solid #0c0;
             position: relative;
+        }
+        @media only screen and (max-width: 760px) {
+            .modal-content {
+                margin: 30px;
+            }
+        }
+        @media only screen and (max-width: 425px) {
+            .modal-content {
+                margin-left: 10px;
+                margin-right: 10px;
+                padding: 5px 12px;
+            }
         }
         button, input, select {
             border: black 1px solid;
