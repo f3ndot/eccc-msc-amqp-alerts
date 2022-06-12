@@ -8,6 +8,9 @@ import asyncio
 import pika.spec
 from pika.adapters.blocking_connection import BlockingChannel
 
+if t.TYPE_CHECKING:
+    from .webserver import AmqpBulletinMessage
+
 OnMessageCallback = t.Callable[
     [BlockingChannel, pika.spec.Basic.Deliver, pika.spec.BasicProperties, bytes],
     t.Any,
@@ -19,4 +22,4 @@ class OnAnyMessageCallable(t.Protocol):
         ...
 
 
-OnMessageAIOQueue = asyncio.Queue[tuple[str, bytes, t.Any]]
+OnMessageAIOQueue = asyncio.Queue["AmqpBulletinMessage"]

@@ -74,8 +74,8 @@
 
             box-shadow: inset 0 0 100px 0 rgba(0,0,0,0.3);
 
-            overflow-y: scroll;
-            overflow-x: visible;
+            /* overflow-y: scroll; */
+            /* overflow-x: visible; */
 
             /* border: 1px solid #97ca2e11; */
             border: 1px solid black;
@@ -151,7 +151,7 @@
             border: 1px solid #0c0;
             position: relative;
         }
-        button, input {
+        button, input, select {
             border: black 1px solid;
             padding: 5px 10px;
             cursor: pointer;
@@ -161,7 +161,7 @@
             background: #0c0;
             font-size: 1em;
         }
-        button:hover, input:hover {
+        button:hover, input:hover, select:hover {
             background: yellowgreen;
         }
         button.close-x {
@@ -175,13 +175,30 @@
             /* color: #0c0; */
             /* font-size: 3em; */
         }
+        fieldset {
+            border: 1px solid #060;
+            display: inline-block;
+            /* padding: 6px; */
+            /* margin-right: 10px; */
+            border-radius: 3px;
+        }
     </style>
 </head>
 <body>
     <h1 class="title">Alphanumeric Warning Bulletins and Alerts <span class="orange">(Beta)</span></h1>
     <h3 class="subtitle">from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 5px;" data-show="modal">[?]</a></h3>
-    <input id="disconnect" type="button" value="Disconnect" />
-    <input id="connect" type="button" value="Connect" />
+    <fieldset>
+        <legend>Connection</legend>
+        <input id="disconnect" type="button" value="Disconnect" />
+        <input id="connect" type="button" value="Connect" />
+    </fieldset><fieldset>
+        <legend>Filter</legend>
+        <select id="region_filter" autocomplete="off">
+            <option value="any" selected>The World</option>
+            <option value="CA">Canada</option>
+            <option value="US">United States of America</option>
+        </select>
+    </fieldset>
     <hr />
     <div class="flex-container">
         <div id="terminal" class="terminal">
@@ -216,7 +233,7 @@
             <h1>What is this?</h1>
             <p class="orange">This is still experimental software!</p>
             <p>A fun project thanks to the open data from Environment and Climate Change Canada's Meteorological Service of Canada.</p>
-            <p>It connects to MSC Datamart AMQP live feed, listening to all alphanumeric meteorological bulletins from Canada and the world.</p>
+            <p>It connects to <a href="https://eccc-msc.github.io/open-data/msc-datamart/readme_en/">MSC's Datamart</a> AMQP live feed, listening to all alphanumeric meteorological bulletins from Canada and around the world.</p>
             <p>Occasionally it'll display the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
             <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions. What you see here is near instant from the issuing processing centre and can often beat sites like weather.ca or what gets pushed to your phone.</p>
             <p><button data-dismiss="modal">Ok, cool</button></p>
@@ -297,14 +314,14 @@
             }
             messages_ul_el.appendChild(newListItem);
             scrollBottom();
-            if (parsedPayload["body"]) {
+            if (parsedPayload["bulletin"]) {
                 const wmoAhl = parsedPayload["message"]
                     .split("/")
                     .slice(-1)[0]
                     .split("_")
                     .slice(0, 3)
                     .join(" ")
-                slowBulletinText(wmoAhl, parsedPayload["body"]);
+                slowBulletinText(wmoAhl, parsedPayload["bulletin"]);
                 // current_bulletin_el.innerText = parsedPayload["body"];
             }
         }
@@ -332,7 +349,17 @@
                 sysMessage(`Cannot connect. Websocket not closed: ${humanReadyState(ws)}`)
             }
         }
-
+        const region_filter_el = document.getElementById("region_filter");
+        region_filter_el.onchange = (event) => {
+            if (!ws || ws.readyState !== ws.OPEN) {
+                return;
+            }
+            const val = event.target.value;
+            ws.send(JSON.stringify({ region_filter: val }));
+            const newListItem  = document.createElement("li");
+            newListItem.appendChild(document.createTextNode(`[SEND] Filter for ${val} region messages`));
+            messages_ul_el.appendChild(newListItem);
+        }
 
         const scrollBottom = () => {
             terminal_el.scrollTop = terminal_el.scrollHeight;
