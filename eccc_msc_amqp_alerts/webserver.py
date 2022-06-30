@@ -11,6 +11,7 @@ from quart import Quart, render_template, websocket
 
 from .types import OnMessageAIOQueue
 from .message_consumer import MessageConsumer
+from .wmo_header import decode_header as decode_wmo_header
 from .listen import consumer
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class QuartWithConsumerOrc(Quart):
 app = QuartWithConsumerOrc(__name__)
 
 
+# TODO: This should go into listen.py's on_bulletin_message and be the returned object
 @dataclasses.dataclass(repr=False)
 class AmqpBulletinMessage:
     routing_key: str
@@ -40,6 +42,19 @@ class AmqpBulletinMessage:
         return self.message.split(" ")[-1].split("/")[-1][2:4]
 
     @property
+    def decoded_wmo_header(self):
+        # FIXME: doesn't work on alert CAP messages.. different URL format
+        try:
+            return decode_wmo_header(self.wmo_header)
+        except ValueError:
+            return None
+
+    @property
+    def wmo_header(self):
+        _, _, path = self.message.split(" ")
+        return " ".join(path.split("/")[-1].replace("_", " ").split(" ")[0:3]).rstrip()
+
+    @property
     def bulletin_len(self):
         return len(self.bulletin) if self.bulletin else "N/A"
 
@@ -55,6 +70,7 @@ class AmqpBulletinMessage:
     def jsondict(self):
         d = self.__dict__
         d["region"] = self.region
+        d["decoded_wmo_header"] = self.decoded_wmo_header
         return d
 
 
@@ -95,12 +111,20 @@ class ConsumerOrchestrator:
     ):
         try:
             _filter = conn.config["region_filter"]
-            if _filter == "any" or message.region == _filter:
-                conn.queue.put_nowait(message)
-            else:
+            if _filter != "any" and message.region != _filter:
                 logger.info(
-                    f"Skipping push {message} due to filter {_filter} on queue {id(conn.queue)}"
+                    f"Skipping push {message} due to region filter {_filter} on queue {id(conn.queue)}"
                 )
+                return
+            if (
+                conn.config["sigmet_filter"]
+                and message.decoded_wmo_header["data_type_sub"] == "aviation/sigmet"
+            ):
+                logger.info(
+                    f"Skipping push {message} due to SIGMET filter on queue {id(conn.queue)}"
+                )
+                return
+            conn.queue.put_nowait(message)
         except asyncio.QueueFull:
             logger.warn(
                 f"SKIPPING PUSH {message} for full websocket queue {id(conn.queue)}"
