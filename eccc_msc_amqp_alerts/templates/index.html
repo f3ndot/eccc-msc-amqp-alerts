@@ -379,10 +379,10 @@
                 // newListItem.classList.add('sysmsg')
                 newListItem.appendChild(document.createTextNode("[SYS] " + parsedPayload["sysmsg"]));
                 // current_bulletin_el.innerText = `[SYSTEM MESSAGE] ${parsedPayload["sysmsg"]}`;
-                if (parsedPayload["region_filter"]) {
+                if ("region_filter" in parsedPayload) {
                     region_filter_el.disabled = false;
                 }
-                if (parsedPayload["sigmet_filter"]) {
+                if ("sigmet_filter" in parsedPayload) {
                     sigmet_filter_el.disabled = false;
                 }
             } else {
