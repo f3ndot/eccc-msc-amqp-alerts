@@ -255,6 +255,7 @@
             <option value="CA">Canada</option>
             <option value="US">United States of America</option>
         </select>
+        <input type="checkbox" id="sigmet_filter"><label for="sigmet_filter">Ignore <abbr title="Significant Meteorological Information (concerns aircraft)">SIGMET</abbr></label>
     </fieldset>
     <hr />
     <div class="flex-container">
@@ -293,15 +294,22 @@
             <p class="orange">This is still experimental software!</p>
             <p>A fun project thanks to the open data from Environment and Climate Change Canada's Meteorological Service of Canada.</p>
             <p>It connects to <a href="https://eccc-msc.github.io/open-data/msc-datamart/readme_en/">MSC's Datamart</a>
-                AMQP live feed, listening to all alphanumeric meteorological bulletins
+                <abbr title="Advanced Message Queuing Protocol">AMQP</abbr> live feed, listening to all alphanumeric meteorological bulletins
                 from Canada and around the world. The live feed exposes part of World Meteorological Organization's <a href="https://en.wikipedia.org/wiki/Global_Telecommunications_System">Global Telecommunications System</a>
-                (GTS), a very cool and old system predating the Internet but is still very much in use today.</p>
+                (GTS), a very cool and old system predating the Internet but still very much used today.</p>
             <p>Occasionally this will display the alerts we all know and love issued under the Common Alert Protocol (CAP). Y'know, the ones that can make your phone scream like an "<a href="https://en.wikipedia.org/wiki/Amber_alert">Amber Alert</a>" if there's a life-threatening storm.</p>
             <p>This is (basically) the same backend feed that powers other Canadian governmental departments and private institutions alike. What you see here is near instant from the issuing station/processing centre and can often beat sites like weather.ca or what gets pushed to your phone.</p>
             <p><button data-dismiss="modal">Ok, cool</button></p>
         </div>
     </div>
     <script>
+        const persistedOptions = new URLSearchParams(window.location.search);
+        const applyPersistedOptionsToUrl = () => {
+            const url = new URL(window.location.href);
+            url.search = persistedOptions.toString();
+            history.replaceState({ path: url.href }, '', url.href);
+        }
+
         const modal_el = document.getElementById("modal");
         const close_modal_els = modal_el.querySelectorAll("*[data-dismiss='modal']");
         close_modal_els.forEach((element) => {
@@ -374,6 +382,9 @@
                 if (parsedPayload["region_filter"]) {
                     region_filter_el.disabled = false;
                 }
+                if (parsedPayload["sigmet_filter"]) {
+                    sigmet_filter_el.disabled = false;
+                }
             } else {
                 newListItem.appendChild(document.createTextNode(`[RECV] [${parsedPayload['routing_key']}] ${parsedPayload["message"]}`));
             }
@@ -415,12 +426,32 @@
                 sysMessage(`Cannot connect. Websocket not closed: ${humanReadyState(ws)}`)
             }
         }
-        const region_filter_el = document.getElementById("region_filter");
-        region_filter_el.onchange = (event) => {
+
+        const sigmet_filter_el = document.getElementById("sigmet_filter");
+        sigmet_filter_el.checked = persistedOptions.get('sigmet_filter') === 'true';
+        sigmet_filter_el.onchange = (event) => {
+            const val = event.target.checked;
+            persistedOptions.set('sigmet_filter', val);
+            applyPersistedOptionsToUrl();
             if (!ws || ws.readyState !== ws.OPEN) {
                 return;
             }
+            sigmet_filter_el.disabled = true;
+            ws.send(JSON.stringify({ sigmet_filter: val }));
+            const newListItem  = document.createElement("li");
+            newListItem.appendChild(document.createTextNode('[SEND] Filter out SIGMET messages'));
+            messages_ul_el.appendChild(newListItem);
+        }
+
+        const region_filter_el = document.getElementById("region_filter");
+        region_filter_el.value = persistedOptions.get('region_filter') ?? 'any';
+        region_filter_el.onchange = (event) => {
             const val = event.target.value;
+            persistedOptions.set('region_filter', val);
+            applyPersistedOptionsToUrl();
+            if (!ws || ws.readyState !== ws.OPEN) {
+                return;
+            }
             region_filter_el.disabled = true;
             ws.send(JSON.stringify({ region_filter: val }));
             const newListItem  = document.createElement("li");
@@ -437,6 +468,11 @@
             const _ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/ws');
             _ws.onopen = (event) => {
                 sysMessage("Websocket opened!");
+                // TODO: withhold if nothing to send/are defaults
+                ws.send(JSON.stringify({
+                    region_filter: region_filter_el.value,
+                    sigmet_filter: sigmet_filter_el.checked,
+                }));
             }
             _ws.onclose = (event) => {
                 sysMessage("Websocket closed!");

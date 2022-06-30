@@ -61,7 +61,9 @@ class AmqpBulletinMessage:
 @dataclasses.dataclass
 class WebsocketConnection:
     queue: OnMessageAIOQueue
-    config: dict = dataclasses.field(default_factory=lambda: {"region_filter": "any"})
+    config: dict = dataclasses.field(
+        default_factory=lambda: {"region_filter": "any", "sigmet_filter": False}
+    )
 
 
 class ConsumerOrchestrator:
@@ -179,6 +181,14 @@ async def handle_recv_ws(conn: WebsocketConnection):
                 {
                     "sysmsg": f"Changed to region filter to {data['region_filter']}",
                     "region_filter": data["region_filter"],
+                }
+            )
+        if "sigmet_filter" in data:
+            conn.config["sigmet_filter"] = data["sigmet_filter"]
+            await websocket.send_json(
+                {
+                    "sysmsg": f"{'Ignoring' if data['sigmet_filter'] else 'Including'} SIGMET bulletins",
+                    "sigmet_filter": data["sigmet_filter"],
                 }
             )
 
