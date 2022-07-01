@@ -67,6 +67,9 @@ welcome to redistribute it under certain conditions.
 - Handle recovering previously declared queues from a former session (delete or purge first?)
 - Recover from 'soft fails' with Pika (eg restarting a channel or connection)
 - Handle `StreamLostError: ("Stream connection lost: TimeoutError(60, 'Operation timed out')",)`
+- Handle graceful remote shutdowns with a restart attempt before giving up
+- Expose filtering other SIGMET and AIRMET types
+- Simplify message parsing into dataclass/de-dupe AHL parsing
 
 ## Acknowledgements
 
