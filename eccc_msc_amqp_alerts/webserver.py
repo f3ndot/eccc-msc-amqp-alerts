@@ -118,6 +118,7 @@ class ConsumerOrchestrator:
                 return
             if (
                 conn.config["sigmet_filter"]
+                and message.decoded_wmo_header is not None
                 and message.decoded_wmo_header["data_type_sub"] == "aviation/sigmet"
             ):
                 logger.info(
