@@ -465,7 +465,10 @@
         }
 
         const connectToWs = () => {
-            const _ws = new WebSocket('ws://' + document.domain + ':' + location.port + '/ws');
+            const wsUrl = new URL(window.location);
+            wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:' ;
+            wsUrl.pathname += '/ws';
+            const _ws = new WebSocket(wsUrl.toString());
             _ws.onopen = (event) => {
                 sysMessage("Websocket opened!");
                 // TODO: withhold if nothing to send/are defaults
