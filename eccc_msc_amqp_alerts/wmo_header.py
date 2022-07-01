@@ -312,7 +312,6 @@ pattern = re.compile(
 )
 
 gts_tables = GTStoWIS2()
-gts_tables.genTableTTAAii()
 
 
 def decode_header(wmo_gts_comms_header: str):
@@ -322,7 +321,7 @@ def decode_header(wmo_gts_comms_header: str):
     parsed_header = result.groupdict()
     current_utc_time = datetime.utcnow()
 
-    data_type_1_tbl = gts_tables.tableTTAAii.get(parsed_header["data_type_1"], {})
+    data_type_1_tbl = gts_tables.tableA.get(parsed_header["data_type_1"], {})
 
     area = country_or_territory_designators_table.get(
         parsed_header["country_or_area"]
@@ -338,7 +337,11 @@ def decode_header(wmo_gts_comms_header: str):
         if (
             best_centre_name is None
             or best_centre_name == "--"
-            or best_centre_name == "MISSING"
+            or best_centre_name == "unknown"
+            or (
+                isinstance(best_centre_name, str)
+                and best_centre_name.startswith("MISSING")
+            )
         ):
             best_centre_name = cccc_entry["centre"]
 

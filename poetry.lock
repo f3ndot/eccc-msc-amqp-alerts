@@ -141,7 +141,7 @@ dev = ["coverage", "hypothesis", "hypothesmith (>=0.2)", "pre-commit"]
 
 [[package]]
 name = "GTStoWIS2"
-version = "0.0.2"
+version = "0.0.3"
 description = "Conversions for GTS AHL to WIS2 tree"
 category = "main"
 optional = false
@@ -151,8 +151,8 @@ develop = false
 [package.source]
 type = "git"
 url = "https://github.com/wmo-im/GTStoWIS2.git"
-reference = "main"
-resolved_reference = "668e7368c4fc1b2c122d990ac889a8c502ee0d23"
+reference = "daa6266a0551f35397f092c9820e98ead55b5d10"
+resolved_reference = "daa6266a0551f35397f092c9820e98ead55b5d10"
 
 [[package]]
 name = "h11"
@@ -620,7 +620,7 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "264204a042767bffe2b716a10cc09b7ad444fe67f2c36410a242000d6460a4bc"
+content-hash = "b448e55a696d853b8322df72f0886aaacb39969840aa7fd531c5bf9bfa2b9c3b"
 
 [metadata.files]
 aiofiles = [

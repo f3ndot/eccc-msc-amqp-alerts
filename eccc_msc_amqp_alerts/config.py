@@ -24,7 +24,7 @@ class Config(object):
             if topic == "all":
                 return ["all"]
             if len(topic) == 1:
-                for subtopic in gts_tables.tableTTAAii[topic]["T2"].keys():
+                for subtopic in gts_tables.tableA[topic]["T2"].keys():
                     expanded_topics.append(f"{topic}{subtopic}")
             else:
                 expanded_topics.append(topic)

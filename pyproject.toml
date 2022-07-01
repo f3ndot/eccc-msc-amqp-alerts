@@ -11,7 +11,7 @@ readme = "README.md"
 python = "^3.10"
 pika = "^1.2.0"
 requests = "^2.26.0"
-gtstowis2 = {git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "main"}
+gtstowis2 = {git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "daa6266a0551f35397f092c9820e98ead55b5d10"}
 lxml = "^4.8.0"
 quart = "^0.17.0"
 
