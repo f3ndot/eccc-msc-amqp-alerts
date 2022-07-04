@@ -6,6 +6,8 @@ from typing import Deque
 import logging
 import sys
 import requests
+import requests.exceptions
+import urllib3.exceptions
 import pika.spec
 from datetime import datetime
 from collections import deque
@@ -84,10 +86,19 @@ def on_bulletin_message(
     ).rstrip()
     logger.debug(f"WMO GTS Abbreviated Header Section: {wmo_gts_comms_header}")
     logger.info(f"WMO GTS Header:\n{pretty_wmo_header(wmo_gts_comms_header)}")
-    text = fetch_bulletin_text(timestamp, host, path)
-    logger.info("End of bulletin")
-    # logger.debug("on_bulletin_message complete")
-    return text
+    try:
+        text = fetch_bulletin_text(timestamp, host, path)
+        logger.info("End of bulletin")
+        return text
+    except (
+        TimeoutError,
+        requests.exceptions.ConnectTimeout,
+        urllib3.exceptions.MaxRetryError,
+    ) as e:
+        logger.warning(
+            f"Timed out trying to fetch bulletin text. Returning None. Exception: {e}"
+        )
+        return None
 
 
 def on_alert_message(
