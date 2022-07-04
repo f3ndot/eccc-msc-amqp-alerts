@@ -13,6 +13,12 @@ import re
 from datetime import datetime, timezone
 from GTStoWIS2 import GTStoWIS2
 
+SIGMET_SUBTYPES = {
+    "warnings/aviation/sigmet",
+    "warnings/aviation/sigmet/clouds/ash",
+    "warnings/aviation/sigmet/cyclone",
+}
+
 country_or_territory_designators_table = {
     "AB": "Albania",
     "AG": "Argentina",
