@@ -13,7 +13,8 @@ import re
 from datetime import datetime, timezone
 from GTStoWIS2 import GTStoWIS2
 
-SIGMET_SUBTYPES = {
+AIRMET_SIGMET_SUBTYPES = {
+    "warnings/aviation/airmet",
     "warnings/aviation/sigmet",
     "warnings/aviation/sigmet/clouds/ash",
     "warnings/aviation/sigmet/cyclone",

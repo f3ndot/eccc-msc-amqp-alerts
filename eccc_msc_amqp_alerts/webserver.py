@@ -11,7 +11,7 @@ from quart import Quart, render_template, websocket
 
 from .types import OnMessageAIOQueue
 from .message_consumer import MessageConsumer
-from .wmo_header import SIGMET_SUBTYPES, decode_header as decode_wmo_header
+from .wmo_header import AIRMET_SIGMET_SUBTYPES, decode_header as decode_wmo_header
 from .listen import consumer
 
 logger = logging.getLogger(__name__)
@@ -119,10 +119,11 @@ class ConsumerOrchestrator:
             if (
                 conn.config["sigmet_filter"]
                 and message.decoded_wmo_header is not None
-                and message.decoded_wmo_header["data_type_sub"] in SIGMET_SUBTYPES
+                and message.decoded_wmo_header["data_type_sub"]
+                in AIRMET_SIGMET_SUBTYPES
             ):
                 logger.info(
-                    f"Skipping push {message} due to SIGMET filter on queue {id(conn.queue)}"
+                    f"Skipping push {message} due to AIRMET/SIGMET filter on queue {id(conn.queue)}"
                 )
                 return
             conn.queue.put_nowait(message)
@@ -212,7 +213,7 @@ async def handle_recv_ws(conn: WebsocketConnection):
             conn.config["sigmet_filter"] = data["sigmet_filter"]
             await websocket.send_json(
                 {
-                    "sysmsg": f"{'Ignoring' if data['sigmet_filter'] else 'Including'} SIGMET bulletins",
+                    "sysmsg": f"{'Ignoring' if data['sigmet_filter'] else 'Including'} SIGMET & AIRMET bulletins",
                     "sigmet_filter": data["sigmet_filter"],
                 }
             )
