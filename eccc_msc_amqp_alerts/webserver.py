@@ -166,11 +166,6 @@ async def index():
     return await render_template("index.html")
 
 
-@app.route("/favicon.ico")
-async def favicon():
-    return await send_file(app.static_folder / "favicon.ico")
-
-
 @app.route("/current_queues")
 async def current_queues():
     websocket_queues = {}
