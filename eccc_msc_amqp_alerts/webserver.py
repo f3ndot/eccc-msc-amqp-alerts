@@ -119,7 +119,8 @@ class ConsumerOrchestrator:
             if (
                 conn.config["sigmet_filter"]
                 and message.decoded_wmo_header is not None
-                and message.decoded_wmo_header["data_type_sub"] == "aviation/sigmet"
+                and message.decoded_wmo_header["data_type_sub"]
+                == "warnings/aviation/airmet"
             ):
                 logger.info(
                     f"Skipping push {message} due to SIGMET filter on queue {id(conn.queue)}"
