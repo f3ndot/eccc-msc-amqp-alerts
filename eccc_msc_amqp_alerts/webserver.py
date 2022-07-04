@@ -97,12 +97,12 @@ class ConsumerOrchestrator:
         )
         self.last_bulletin = message
         logger.info(f"push_to_websocket_queue called with {message}")
-        try:
-            self.dump_queue.put_nowait(message)
-        except asyncio.QueueFull:
-            logger.info(
-                f"SKIPPING PUSH {message} to dump queue {self.dump_queue} (is full)"
-            )
+        # try:
+        #     self.dump_queue.put_nowait(message)
+        # except asyncio.QueueFull:
+        #     logger.info(
+        #         f"SKIPPING PUSH {message} to dump queue {self.dump_queue} (is full)"
+        #     )
         for ws_conn in self.websockets.values():
             self._push_to_ws_queue(message=message, conn=ws_conn)
 
