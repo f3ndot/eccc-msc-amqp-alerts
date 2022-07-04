@@ -26,7 +26,9 @@
             <option value="CA">Canada</option>
             <option value="US">United States of America</option>
         </select>
-        <input type="checkbox" id="sigmet_filter"><label for="sigmet_filter">Ignore <abbr title="Significant Meteorological Information (concerns aircraft)">SIGMET</abbr> &amp; <abbr title="Airmen's Meteorological Information">AIRMET</abbr></label>
+        <label for="sigmet_filter">
+            <input type="checkbox" id="sigmet_filter">Ignore <abbr title="Significant Meteorological Information (concerns aircraft)">SIGMET</abbr> &amp; <abbr title="Airmen's Meteorological Information">AIRMET</abbr>
+        </label>
     </fieldset>
     <hr />
     <div class="flex-container">
@@ -213,7 +215,7 @@
             sigmet_filter_el.disabled = true;
             ws.send(JSON.stringify({ sigmet_filter: val }));
             const newListItem  = document.createElement("li");
-            newListItem.appendChild(document.createTextNode('[SEND] Filter out SIGMET messages'));
+            newListItem.appendChild(document.createTextNode('[SEND] Filter out SIGMET & AIRMET messages'));
             messages_ul_el.appendChild(newListItem);
         }
 

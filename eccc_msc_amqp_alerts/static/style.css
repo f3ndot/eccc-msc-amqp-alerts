@@ -194,6 +194,10 @@ footer {
       padding: 5px 12px;
   }
 }
+label {
+  display: inline-block;
+  line-height: 2;
+}
 button, input, select {
   border: black 1px solid;
   padding: 5px 10px;
