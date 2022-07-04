@@ -7,7 +7,7 @@ import dataclasses
 import json
 import logging
 from datetime import datetime
-from quart import Quart, render_template, websocket
+from quart import Quart, render_template, send_file, websocket
 
 from .types import OnMessageAIOQueue
 from .message_consumer import MessageConsumer
@@ -164,6 +164,11 @@ async def shutdown():
 @app.route("/")
 async def index():
     return await render_template("index.html")
+
+
+@app.route("/favicon.ico")
+async def favicon():
+    return await send_file(app.static_folder / "favicon.ico")
 
 
 @app.route("/current_queues")
