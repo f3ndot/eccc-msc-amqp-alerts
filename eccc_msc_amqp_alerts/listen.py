@@ -92,11 +92,11 @@ def on_bulletin_message(
         return text
     except (
         TimeoutError,
-        requests.exceptions.ConnectTimeout,
+        requests.exceptions.RequestException,
         urllib3.exceptions.MaxRetryError,
     ) as e:
         logger.warning(
-            f"Timed out trying to fetch bulletin text. Returning None. Exception: {e}"
+            f"Timed out trying to fetch bulletin text. Returning None. Exception: {repr(e)}"
         )
         return None
 
