@@ -15,7 +15,7 @@
 <body>
     <h1 class="title">Alphanumeric Warning Bulletins and Alerts <span class="orange">(Beta)</span></h1>
     <h3 class="subtitle">from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 10px; font-size: 0.8em" data-show="modal">[what is this?]</a></h3>
-    <fieldset>
+    <fieldset style="display:none">
         <legend>Connection</legend>
         <input id="disconnect" type="button" value="Disconnect" />
         <input id="connect" type="button" value="Connect" />
@@ -29,6 +29,11 @@
         <label for="sigmet_filter">
             <input type="checkbox" id="sigmet_filter">Ignore <abbr title="Significant Meteorological Information (concerns aircraft)">SIGMET</abbr> &amp; <abbr title="Airmen's Meteorological Information">AIRMET</abbr>
         </label>
+    </fieldset><fieldset>
+        <legend>Display</legend>
+        <label for="message_log">
+            <input type="checkbox" id="message_log">Show log</abbr>
+        </label>
     </fieldset>
     <hr />
     <div class="flex-container">
@@ -38,7 +43,7 @@
             <span class="caret">&nbsp;</span>
             <div class="scanlines"></div>
         </div>
-        <div id="messages_container" class="terminal">
+        <div id="messages_container" class="terminal" style="display:none">
             <ul id="messages">
                 <div class="scanlines"></div>
             </ul>
@@ -217,6 +222,17 @@
             const newListItem  = document.createElement("li");
             newListItem.appendChild(document.createTextNode('[SEND] Filter out SIGMET & AIRMET messages'));
             messages_ul_el.appendChild(newListItem);
+        }
+
+        const message_log_el = document.getElementById("message_log");
+        const messages_container_el = document.getElementById("messages_container");
+        message_log_el.checked = persistedOptions.get('message_log') === 'true';
+        messages_container_el.style.display = message_log_el.checked ? '' : 'none';
+        message_log_el.onchange = (event) => {
+            const val = event.target.checked;
+            persistedOptions.set('message_log', val);
+            applyPersistedOptionsToUrl();
+            messages_container_el.style.display = val ? '' : 'none';
         }
 
         const region_filter_el = document.getElementById("region_filter");
