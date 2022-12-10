@@ -108,6 +108,12 @@
         });
 
 
+        if (persistedOptions.get('show_info_once') === 'true') {
+            persistedOptions.delete('show_info_once');
+            applyPersistedOptionsToUrl();
+            show_modal_els[0].click();
+        }
+
         const humanReadyState = (ws) => {
             switch(ws.readyState) {
                 case ws.CLOSED:
