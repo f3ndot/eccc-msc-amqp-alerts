@@ -15,6 +15,7 @@
 <body>
     <h1 class="title">Alphanumeric Warning Bulletins and Alerts <span class="orange">(Beta)</span></h1>
     <h3 class="subtitle">from Meteorological Service of Canada's live feed<a style="cursor: pointer; padding-left: 10px; font-size: 0.8em" data-show="modal">[what is this?]</a></h3>
+    <audio style="display:none" id="rtty" src="./static/clicking.ogg" type="audio/ogg" preload loop controls autoplay></audio>
     <fieldset style="display:none">
         <legend>Connection</legend>
         <input id="disconnect" type="button" value="Disconnect" />
@@ -133,26 +134,42 @@
         const current_wmo_al = document.getElementById("current_wmo_al");
         const current_bulletin_el = document.getElementById("current_bulletin");
         const terminal_el = document.getElementById("terminal");
+        const rtty_audio_el = document.getElementById("rtty");
+        rtty_audio_el.volume = 1;
 
-        let slowTextTimeouts = [];
 
-        const slowBulletinText = (ahl, text, speed = 30) => {
-            slowTextTimeouts.forEach((timeout) => {
-                clearTimeout(timeout);
-            })
-            slowTextTimeouts = [];
+        let slowBulletinIntervalId = undefined;
+
+        const slowBulletinText = (ahl, text, speed = 10) => {
+            console.log(`Slowly printing ${text.length} chars at ${speed}ms/char (${text.length*(speed/1000)} sec)`);
+            rtty_audio_el.play();
+            // if set, then previous bulletin text is printing and should be interrupted
+            if (slowBulletinIntervalId !== undefined) {
+                console.log(`Previous slow bulletin still printing: clearing its interval ${slowBulletinIntervalId}`)
+                clearInterval(slowBulletinIntervalId);
+                slowBulletinIntervalId = undefined;
+            }
             current_wmo_al.innerText = `[${ahl}]`;
             current_bulletin_el.innerText = '';
-            const lines = text.split(/\r?\n/);
-            for(i = 0; i < lines.length; i++) {
-                const myLine = lines[i];
-                const timeout = setTimeout((line, isFirst) => {
-                    const existingText = current_bulletin_el.innerText;
-                    current_bulletin_el.innerText = `${existingText}${isFirst ? '' : '\n'}${line}`;
-                    scrollBottom();
-                }, speed * i, myLine, i === 0);
-                slowTextTimeouts.push(timeout);
+            const allChars = text.split('');
+            const printCharFromArray = () => {
+                const myChar = allChars.shift();
+                if (myChar === undefined) {
+                    console.log("No more chars to print")
+                    if (slowBulletinIntervalId !== undefined) {
+                        console.log(`clearing interval ${slowBulletinIntervalId}`)
+                        clearInterval(slowBulletinIntervalId);
+                        slowBulletinIntervalId = undefined;
+                    }
+                    rtty_audio_el.pause();
+                    rtty_audio_el.currentTime = 0;
+                    return;
+                }
+                const existingText = current_bulletin_el.innerText;
+                current_bulletin_el.innerText = `${existingText}${myChar}`;
+                scrollBottom();
             }
+            slowBulletinIntervalId = setInterval(printCharFromArray, speed)
         }
 
         const receiveMessage = (payload) => {
