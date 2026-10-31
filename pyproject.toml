@@ -1,29 +1,38 @@
-[tool.poetry]
+[project]
 name = "eccc-msc-amqp-alerts"
 version = "0.1.0"
 description = "Subscribe and listen to Environment and Climate Change Canada's (ECCC) Meteorological Service of Canada (MSC) Datamart AMQP server for timely notification of all and any meteorological alerts and bulletins."
-authors = ["Justin Bull <me@justinbull.ca>"]
-license = "GPL-3.0-or-later"  # required due to GTStoWIS2
-repository = "https://github.com/f3ndot/eccc-msc-amqp-alerts"
+authors = [{ name = "Justin Bull", email = "me@justinbull.ca" }]
+requires-python = ">=3.15,<4"
 readme = "README.md"
+license = "GPL-3.0-or-later" # required due to GTStoWIS2
+dependencies = [
+    "pika>=1.2.0,<2",
+    "requests>=2.26.0,<3",
+    "gtstowis2",
+    "lxml>=4.8.0,<7",
+    "quart>=0.17.0,<0.18",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pika = "^1.2.0"
-requests = "^2.26.0"
-gtstowis2 = {git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "daa6266a0551f35397f092c9820e98ead55b5d10"}
-lxml = "^4.8.0"
-quart = "^0.17.0"
+[project.urls]
+Repository = "https://github.com/f3ndot/eccc-msc-amqp-alerts"
 
-[tool.poetry.dev-dependencies]
-ipython = "^7.28.0"
-black = "^22.3.0"
-flake8 = "^4.0.1"
-mypy = "^0.960"
-flake8-bugbear = "^22.4.25"
-types-requests = "^2.27.29"
-lxml-stubs = "^0.4.0"
+[dependency-groups]
+dev = [
+    "ipython>=7.28.0,<8",
+    "black>=22.3.0,<23",
+    "flake8>=4.0.1,<5",
+    "mypy>=0.960,<0.961",
+    "flake8-bugbear>=22.4.25,<23",
+    "types-requests>=2.27.29,<3",
+    "lxml-stubs>=0.5.1,<0.6",
+]
+
+[tool.uv]
+
+[tool.uv.sources]
+gtstowis2 = { git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "daa6266a0551f35397f092c9820e98ead55b5d10" }
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"
