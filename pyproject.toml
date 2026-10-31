@@ -7,10 +7,10 @@ requires-python = ">=3.15,<4"
 readme = "README.md"
 license = "GPL-3.0-or-later" # required due to GTStoWIS2
 dependencies = [
-    "pika>=1.2.0,<2",
-    "requests>=2.26.0,<3",
+    "pika>=1.4.4,<2",
+    "requests>=2.34.2,<3",
     "gtstowis2",
-    "lxml>=4.8.0,<7",
+    "lxml>=6.1.3,<7",
     "quart>=0.20.0,<0.21",
 ]
 
@@ -24,14 +24,14 @@ dev = [
     "flake8>=7.5.0,<8",
     "mypy>=2.4.1,<3",
     "flake8-bugbear>=26.10.27,<27",
-    "types-requests>=2.31.0.6,<3",
+    "types-requests>=2.33.0.20261030,<3",
     "lxml-stubs>=0.5.1,<0.6",
 ]
 
 [tool.uv]
 
 [tool.uv.sources]
-gtstowis2 = { git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "daa6266a0551f35397f092c9820e98ead55b5d10" }
+gtstowis2 = { git = "https://github.com/wmo-im/GTStoWIS2.git", rev = "a29ec7818c9a65a9bbba30bb59d48859e553ebec" }
 
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]

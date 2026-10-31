@@ -327,7 +327,7 @@ def decode_header(wmo_gts_comms_header: str):
     if result is None:
         raise ValueError("Invalid header. Must be format of 'T₁T₂A₁A₂ii CCCC YYGGgg'")
     parsed_header = result.groupdict()
-    current_utc_time = datetime.utcnow()
+    current_utc_time = datetime.now(timezone.utc)
 
     data_type_1_tbl = gts_tables.tableA.get(parsed_header["data_type_1"], {})
 
