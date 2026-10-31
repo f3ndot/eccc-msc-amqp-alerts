@@ -6,6 +6,8 @@ import asyncio
 import dataclasses
 import json
 import logging
+import os
+import signal
 from datetime import datetime
 
 from quart import Quart, render_template, send_file, websocket
@@ -24,6 +26,13 @@ class QuartWithConsumerOrc(Quart):
 
 
 app = QuartWithConsumerOrc(__name__)
+
+# Set on Ctrl+C/SIGTERM. Hypercorn won't finish shutting down until every connection
+# has closed, and websockets otherwise stay open forever, so they watch this and close
+# themselves.
+shutting_down = asyncio.Event()
+# How long a graceful shutdown gets before the process exits regardless
+FORCE_SHUTDOWN_AFTER_SECS = 10
 
 
 # TODO: This should go into listen.py's on_bulletin_message and be the returned object
@@ -221,6 +230,12 @@ async def handle_recv_ws(conn: WebsocketConnection):
             )
 
 
+async def send_from_queue(queue: OnMessageAIOQueue):
+    while True:
+        item = await queue.get()
+        await websocket.send_json(item.jsondict())
+
+
 @app.websocket("/ws")
 async def ws():
     tasks: list[asyncio.Task] = []
@@ -243,12 +258,56 @@ async def ws():
             )
             item = app.consumer_orc.last_bulletin
             await websocket.send_json(item.jsondict())
-        while True:
-            item = await queue.get()
-            await websocket.send_json(item.jsondict())
+        send_task = asyncio.create_task(send_from_queue(queue))
+        shutdown_task = asyncio.create_task(shutting_down.wait())
+        tasks += [send_task, shutdown_task]
+        await asyncio.wait(
+            [send_task, shutdown_task], return_when=asyncio.FIRST_COMPLETED
+        )
+        if send_task.done():
+            # Surface whatever ended the send loop, eg. the client going away
+            send_task.result()
+        else:
+            await websocket.send_json({"sysmsg": "Server is shutting down. Goodbye!"})
     finally:
         logger.info("stopping ws keepalive")
         for task in tasks:
             task.cancel()
         logger.info(f"Removing {queue}")
         del app.consumer_orc.websockets[id(queue)]
+
+
+def _force_exit(reason: str):
+    print(f"💥 {reason}. Forcing shutdown!", flush=True)
+    os._exit(1)
+
+
+async def _serve(host: str, port: int, debug: bool):
+    loop = asyncio.get_running_loop()
+
+    def on_signal():
+        if shutting_down.is_set():
+            _force_exit("Received second interrupt")
+        print("🛎️ Shutting down gracefully... Ctrl+C again to force", flush=True)
+        shutting_down.set()
+        loop.call_later(
+            FORCE_SHUTDOWN_AFTER_SECS,
+            _force_exit,
+            f"Still running after {FORCE_SHUTDOWN_AFTER_SECS}s",
+        )
+
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, on_signal)
+
+    async def wait_for_shutdown() -> None:
+        await shutting_down.wait()
+
+    await app.run_task(
+        host=host, port=port, debug=debug, shutdown_trigger=wait_for_shutdown
+    )
+
+
+def run(host: str, port: int, debug: bool = False):
+    """Run the webserver until Ctrl+C or SIGTERM. Used instead of Quart's `app.run()`
+    so open websockets get closed on shutdown, and a second Ctrl+C forces an exit."""
+    asyncio.run(_serve(host, port, debug))

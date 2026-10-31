@@ -72,9 +72,9 @@ if parsed_args.loglevel <= logging.INFO:
 
 if parsed_args.web_server:
     from .config import config
-    from .webserver import app
+    from .webserver import run as run_webserver
 
-    app.run(
+    run_webserver(
         host=(
             parsed_args.host if parsed_args.host is not None else config.webserver_host
         ),
