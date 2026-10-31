@@ -60,7 +60,8 @@ Metereological Service Canada Datamart AMQP server
 
 options:
   -h, --help         show this help message and exit
-  -d, --debug        print lots of debugging statements
+  -d, --debug        print lots of debugging statements. With -w, also reload the
+                     webserver when its code changes
   -v, --verbose      be verbose, show what's going on
   -s, --print-stats  print statistics on exit
   -w, --web-server   EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets

@@ -11,6 +11,7 @@ import signal
 from datetime import datetime
 
 from quart import Quart, render_template, send_file, websocket
+from quart.utils import MustReloadError, observe_changes, restart
 
 from .listen import consumer
 from .message_consumer import MessageConsumer
@@ -282,13 +283,12 @@ def _force_exit(reason: str):
     os._exit(1)
 
 
-async def _serve(host: str, port: int, debug: bool):
+async def _serve(host: str, port: int, debug: bool) -> bool:
+    """Returns True if the server stopped so it could reload changed code"""
     loop = asyncio.get_running_loop()
 
-    def on_signal():
-        if shutting_down.is_set():
-            _force_exit("Received second interrupt")
-        print("🛎️ Shutting down gracefully... Ctrl+C again to force", flush=True)
+    def begin_shutdown(reason: str):
+        print(f"🛎️ {reason}", flush=True)
         shutting_down.set()
         loop.call_later(
             FORCE_SHUTDOWN_AFTER_SECS,
@@ -296,18 +296,40 @@ async def _serve(host: str, port: int, debug: bool):
             f"Still running after {FORCE_SHUTDOWN_AFTER_SECS}s",
         )
 
+    def on_signal():
+        if shutting_down.is_set():
+            _force_exit("Received second interrupt")
+        begin_shutdown("Shutting down gracefully... Ctrl+C again to force")
+
     for sig in (signal.SIGINT, signal.SIGTERM):
         loop.add_signal_handler(sig, on_signal)
 
     async def wait_for_shutdown() -> None:
         await shutting_down.wait()
 
-    await app.run_task(
-        host=host, port=port, debug=debug, shutdown_trigger=wait_for_shutdown
+    server = asyncio.create_task(
+        app.run_task(
+            host=host, port=port, debug=debug, shutdown_trigger=wait_for_shutdown
+        )
     )
+    reload = False
+    if debug:
+        # Watches the source of every loaded module, raising when one changes. Ends
+        # quietly if we shut down for some other reason first
+        try:
+            await observe_changes(asyncio.sleep, shutting_down)
+        except MustReloadError:
+            reload = True
+            begin_shutdown("Code changed, reloading...")
+    await server
+    return reload
 
 
 def run(host: str, port: int, debug: bool = False):
     """Run the webserver until Ctrl+C or SIGTERM. Used instead of Quart's `app.run()`
-    so open websockets get closed on shutdown, and a second Ctrl+C forces an exit."""
-    asyncio.run(_serve(host, port, debug))
+    so open websockets get closed on shutdown, and a second Ctrl+C forces an exit.
+
+    With `debug`, the server also restarts itself whenever its code changes."""
+    if asyncio.run(_serve(host, port, debug)):
+        # Re-executes this process with the same arguments
+        restart()

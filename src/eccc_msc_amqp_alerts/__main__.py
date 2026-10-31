@@ -20,7 +20,8 @@ This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you a
 parser.add_argument(
     "-d",
     "--debug",
-    help="print lots of debugging statements",
+    help="print lots of debugging statements. With -w, also reload the webserver "
+    "when its code changes",
     action="store_const",
     dest="loglevel",
     const=logging.DEBUG,
