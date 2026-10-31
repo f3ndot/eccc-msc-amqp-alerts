@@ -28,7 +28,7 @@ print("""
 recent_bulletins: Deque[str] = deque(maxlen=50)
 
 # TODO: figure out what the most blessed way to introspect own version
-user_agent = f"eccc-msc-amqp-alerts/0.1.0 (Python {'.'.join([str(i) for i in sys.version_info])})"
+user_agent = f"eccc-msc-amqp-alerts/0.2.0 (Python {'.'.join([str(i) for i in sys.version_info])})"
 
 # ECCC's Datamart announces every new file with a message whose routing key mirrors
 # the file's path on the server, with "/" swapped for ".":
