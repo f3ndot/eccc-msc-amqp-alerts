@@ -48,6 +48,18 @@ parser.add_argument(
     help="EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets",
     dest="web_server",
 )
+parser.add_argument(
+    "--host",
+    help="address for the webserver to bind to, eg. 0.0.0.0 for all interfaces. "
+    "Overrides config.ini (default: 127.0.0.1). Requires -w",
+)
+parser.add_argument(
+    "-p",
+    "--port",
+    type=int,
+    help="port for the webserver to listen on. Overrides config.ini "
+    "(default: 5000). Requires -w",
+)
 parsed_args = parser.parse_args()
 
 logging.basicConfig(
@@ -59,9 +71,18 @@ if parsed_args.loglevel <= logging.INFO:
     logging.getLogger("pika.heartbeat").setLevel(logging.DEBUG)
 
 if parsed_args.web_server:
+    from .config import config
     from .webserver import app
 
-    app.run(debug=(parsed_args.loglevel == logging.DEBUG))
+    app.run(
+        host=(
+            parsed_args.host if parsed_args.host is not None else config.webserver_host
+        ),
+        port=(
+            parsed_args.port if parsed_args.port is not None else config.webserver_port
+        ),
+        debug=(parsed_args.loglevel == logging.DEBUG),
+    )
 else:
     from .listen import run
 

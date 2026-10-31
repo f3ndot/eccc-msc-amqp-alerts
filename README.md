@@ -10,44 +10,64 @@ This is still in active development and may have many incomplete features or beh
 
 ## Installation
 
+This project uses [uv](https://docs.astral.sh/uv/) and requires Python 3.15. uv will
+download a matching Python for you if you don't have one.
+
+```
+uv sync
+```
+
+or, without uv:
+
 ```
 pip install .
 ```
 
-or
-
-```
-poetry install
-```
-
 ## Running
+
+Settings live in `config.ini` in the directory you run the program from.
+
+```
+uv run python -m eccc_msc_amqp_alerts -v
+```
+
+or, if installed with pip:
 
 ```
 python -m eccc_msc_amqp_alerts -v
-```
-
-or
-
-```
-poetry run python -m eccc_msc_amqp_alerts -v
 ```
 
 ## Usage
 
 You should probably use `-v` when running the program.
 
+The web server (`-w`) listens on `127.0.0.1:5000` by default. Change that with `host` and
+`port` in the `[webserver]` section of `config.ini`, or with the `--host` and `--port`
+flags, which override `config.ini`. eg. to serve on all interfaces on port 8080:
+
 ```
-usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s] [-w]
+uv run python -m eccc_msc_amqp_alerts -v -w --host 0.0.0.0 --port 8080
+```
+
+On macOS, port 5000 is usually taken by AirPlay Receiver, so you'll likely want a
+different port there.
+
+```
+usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s] [-w] [--host HOST] [-p PORT]
 
 Listen to and print alerts and bulletins from Environment and Climate Change Canada's
 Metereological Service Canada Datamart AMQP server
 
-optional arguments:
+options:
   -h, --help         show this help message and exit
   -d, --debug        print lots of debugging statements
   -v, --verbose      be verbose, show what's going on
   -s, --print-stats  print statistics on exit
   -w, --web-server   EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets
+  --host HOST        address for the webserver to bind to, eg. 0.0.0.0 for all
+                     interfaces. Overrides config.ini (default: 127.0.0.1). Requires -w
+  -p, --port PORT    port for the webserver to listen on. Overrides config.ini (default:
+                     5000). Requires -w
 
 Copyright (C) 2026  Justin A. S. Bull
 
