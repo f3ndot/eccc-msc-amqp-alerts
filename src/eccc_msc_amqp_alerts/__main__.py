@@ -1,5 +1,5 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 import argparse
@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(
     prog="eccc_msc_amqp_alerts",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description="Listen to and print alerts and bulletins from Environment and Climate Change Canada's Metereological Service Canada Datamart AMQP server",
-    epilog="""Copyright (C) 2022  Justin A. S. Bull
+    epilog="""Copyright (C) 2026  Justin A. S. Bull
 
 Data Source: Environment and Climate Change Canada
 https://eccc-msc.github.io/open-data/licence/readme_en/

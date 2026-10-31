@@ -1,8 +1,9 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 from configparser import ConfigParser
+
 from .wmo_header import gts_tables
 
 

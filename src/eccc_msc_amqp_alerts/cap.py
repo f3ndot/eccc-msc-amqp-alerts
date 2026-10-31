@@ -1,9 +1,10 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
-import os
 import logging
+import os
+
 from lxml import etree
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class Alert:
     _SUPPORTED_CAP_CP = "profile:CAP-CP:0.4"
     _SUPPORTED_CAP_CP_EVENT = "profile:CAP-CP:Event:0.4"
 
-    def __init__(self, bytes: bytes = None, path: str = None) -> None:
+    def __init__(self, bytes: bytes | None = None, path: str | None = None) -> None:
         """Pass in raw requests' response bytes to `bytes`"""
         if bytes is None and path is None:
             raise ValueError("Specify either path or bytes")

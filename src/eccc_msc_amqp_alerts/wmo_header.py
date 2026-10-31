@@ -1,5 +1,5 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 
@@ -11,6 +11,7 @@
 # Data type designator T1 Matrix Table for T1T2A1A2ii definitions
 import re
 from datetime import datetime, timezone
+
 from GTStoWIS2 import GTStoWIS2
 
 AIRMET_SIGMET_SUBTYPES = {

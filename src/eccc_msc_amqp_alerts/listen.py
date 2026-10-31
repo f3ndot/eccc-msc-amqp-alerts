@@ -1,31 +1,30 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
-from typing import Deque
 import logging
 import sys
+from collections import deque
+from datetime import datetime
+from typing import Deque
+
+import pika.spec
 import requests
 import requests.exceptions
 import urllib3.exceptions
-import pika.spec
-from datetime import datetime
-from collections import deque
 from pika.adapters.blocking_connection import BlockingChannel
-from .wmo_header import pretty_header as pretty_wmo_header
-from .message_consumer import MessageConsumer
-from .config import config
 
+from .config import config
+from .message_consumer import MessageConsumer
+from .wmo_header import pretty_header as pretty_wmo_header
 
 logger = logging.getLogger(__name__)
-print(
-    """
+print("""
     ❤️ Many thanks to ECCC for making this data open and accessible to the public. Required attribution notice follows...
 
     Data Source: Environment and Climate Change Canada
     https://eccc-msc.github.io/open-data/licence/readme_en/
-"""
-)
+""")
 
 recent_bulletins: Deque[str] = deque(maxlen=50)
 

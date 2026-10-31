@@ -49,7 +49,7 @@ optional arguments:
   -s, --print-stats  print statistics on exit
   -w, --web-server   EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets
 
-Copyright (C) 2022  Justin A. S. Bull
+Copyright (C) 2026  Justin A. S. Bull
 
 Data Source: Environment and Climate Change Canada
 https://eccc-msc.github.io/open-data/licence/readme_en/
@@ -78,6 +78,6 @@ welcome to redistribute it under certain conditions.
 
 ## Copyright
 
-Copyright © 2022 Justin A. S. Bull
+Copyright © 2026 Justin A. S. Bull
 
 See [`eccc_msc_amqp_alerts/__init__.py`](eccc_msc_amqp_alerts/__init__.py) for full notice

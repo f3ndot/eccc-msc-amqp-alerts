@@ -1,5 +1,5 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 import asyncio
@@ -7,12 +7,14 @@ import dataclasses
 import json
 import logging
 from datetime import datetime
+
 from quart import Quart, render_template, send_file, websocket
 
-from .types import OnMessageAIOQueue
-from .message_consumer import MessageConsumer
-from .wmo_header import AIRMET_SIGMET_SUBTYPES, decode_header as decode_wmo_header
 from .listen import consumer
+from .message_consumer import MessageConsumer
+from .types import OnMessageAIOQueue
+from .wmo_header import AIRMET_SIGMET_SUBTYPES
+from .wmo_header import decode_header as decode_wmo_header
 
 logger = logging.getLogger(__name__)
 
