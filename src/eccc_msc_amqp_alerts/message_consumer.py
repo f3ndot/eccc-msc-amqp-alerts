@@ -112,7 +112,7 @@ class MessageConsumer:
             on_open_callback=self.on_connection_open,
             on_open_error_callback=self.on_connection_open_error,
             on_close_callback=self.on_connection_closed,
-            custom_ioloop=loop,
+            custom_ioloop=loop or asyncio.new_event_loop(),
         )
 
     def close_connection(self):

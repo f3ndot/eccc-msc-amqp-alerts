@@ -143,7 +143,7 @@ class ConsumerOrchestrator:
 @app.before_serving
 async def start_amqp_listening():
     logger.info("Starting AMQP listening alongside Quart")
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     app.consumer_orc = ConsumerOrchestrator(consumer)
     loop.create_task(app.consumer_orc.run(loop=loop))
 
