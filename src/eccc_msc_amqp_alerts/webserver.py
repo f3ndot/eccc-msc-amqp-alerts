@@ -130,7 +130,7 @@ class ConsumerOrchestrator:
                 return
             conn.queue.put_nowait(message)
         except asyncio.QueueFull:
-            logger.warn(
+            logger.warning(
                 f"SKIPPING PUSH {message} for full websocket queue {id(conn.queue)}"
             )
 
