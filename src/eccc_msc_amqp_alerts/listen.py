@@ -2,14 +2,13 @@
 # Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
+import asyncio
 import logging
 import sys
 from collections import deque
 from typing import Deque
 
 import httpx
-import pika.spec
-from pika.adapters.blocking_connection import BlockingChannel
 
 from .config import config
 from .message_consumer import MessageConsumer
@@ -132,14 +131,9 @@ async def fetch_bulletin_text(original_host: str, path: str):
     return bulletin_text
 
 
-async def on_bulletin_message(
-    _channel: BlockingChannel,
-    method: pika.spec.Basic.Deliver,
-    properties: pika.spec.BasicProperties,
-    body: bytes,
-):
+async def on_bulletin_message(routing_key: str, body: bytes):
     _body = body.decode()
-    logger.debug({"method": method, "properties": properties, "body": _body})
+    logger.debug({"routing_key": routing_key, "body": _body})
     _timestamp, host, path = _body.split(" ")
     wmo_gts_comms_header = " ".join(
         path.split("/")[-1].replace("_", " ").split(" ")[0:3]
@@ -157,15 +151,10 @@ async def on_bulletin_message(
         return None
 
 
-def on_alert_message(
-    _channel: BlockingChannel,
-    method: pika.spec.Basic.Deliver,
-    properties: pika.spec.BasicProperties,
-    body: bytes,
-):
+def on_alert_message(routing_key: str, body: bytes):
     _body = body.decode()
     print(f"⚠️⚠️⚠️ ALERT! ALERT! ALERT! ⚠️⚠️⚠️ - {_body}")
-    logger.debug({"method": method, "properties": properties, "body": _body})
+    logger.debug({"routing_key": routing_key, "body": _body})
     logger.debug("on_alert_message complete")
 
 
@@ -193,13 +182,26 @@ if config.alerts:
     )
 
 
-def run(print_stats=False):
+async def _listen():
     try:
-        print("🔌 Connecting... ", end="", flush=True)
-        consumer.run(on_started=lambda: print("OK! Now listening for messages... 👂"))
-    except KeyboardInterrupt:
+        await consumer.start(
+            on_started=lambda: print("OK! Now listening for messages... 👂")
+        )
+        await asyncio.Event().wait()  # until Ctrl+C cancels us
+    except asyncio.CancelledError:
         print("🛎️ Keyboard interrupt received! Shutting down...")
-        consumer.stop()
-        if print_stats:
-            print("📊 Statistics!")
-            print(consumer.stats)
+        raise
+    finally:
+        await consumer.stop()
+        await close_http_client()
+
+
+def run(print_stats=False):
+    print("🔌 Connecting... ", end="", flush=True)
+    try:
+        asyncio.run(_listen())
+    except KeyboardInterrupt:
+        pass
+    if print_stats:
+        print("📊 Statistics!")
+        print(consumer.stats)

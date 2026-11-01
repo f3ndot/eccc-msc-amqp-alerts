@@ -5,7 +5,6 @@ import socket
 import threading
 import time
 
-import pika.spec
 import pytest
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response
@@ -29,8 +28,7 @@ def message_body(host: str, path: str = PATH) -> bytes:
     return f"20261101151613.417 {host} {path}".encode()
 
 
-def deliver(routing_key: str = "v02.post.20261101.WXO-DD.bulletins.alphanumeric"):
-    return pika.spec.Basic.Deliver(routing_key=routing_key)
+ROUTING_KEY = "v02.post.20261101.WXO-DD.bulletins.alphanumeric.20261101.SA.CYXC.15"
 
 
 @pytest.fixture
@@ -164,7 +162,7 @@ async def test_bulletin_message_returns_fetched_text(
 ):
     httpserver.expect_request(f"/hpfx/{PATH}").respond_with_data(BULLETIN)
 
-    result = listen.on_bulletin_message(None, deliver(), None, message_body(dd_host))
+    result = listen.on_bulletin_message(ROUTING_KEY, message_body(dd_host))
 
     assert await resolve(result) == BULLETIN
 
@@ -172,9 +170,7 @@ async def test_bulletin_message_returns_fetched_text(
 async def test_bulletin_message_returns_none_when_hosts_unreachable(
     unreachable_host: str,
 ):
-    result = listen.on_bulletin_message(
-        None, deliver(), None, message_body(unreachable_host)
-    )
+    result = listen.on_bulletin_message(ROUTING_KEY, message_body(unreachable_host))
 
     assert await resolve(result) is None
 
@@ -184,7 +180,7 @@ async def test_bulletin_message_returns_none_when_hpfx_and_dd_time_out(monkeypat
     with hung_host() as host:
         monkeypatch.setattr(listen, "HPFX_HOST", host)
 
-        result = listen.on_bulletin_message(None, deliver(), None, message_body(host))
+        result = listen.on_bulletin_message(ROUTING_KEY, message_body(host))
 
         assert await resolve(result) is None
 
@@ -244,9 +240,7 @@ async def test_bulletin_dated_end_of_last_month_still_fetched(
     path = PATH.replace("SACN43_CYXC_011500", "SACN43_CYXC_311500")
     httpserver.expect_request(f"/hpfx/{path}").respond_with_data(BULLETIN)
 
-    result = listen.on_bulletin_message(
-        None, deliver(), None, message_body(dd_host, path)
-    )
+    result = listen.on_bulletin_message(ROUTING_KEY, message_body(dd_host, path))
 
     assert await resolve(result) == BULLETIN
 
@@ -290,7 +284,7 @@ async def test_gives_up_after_one_retry(monkeypatch):
     with dropping_host(drop_first=99) as (host, attempts):
         monkeypatch.setattr(listen, "HPFX_HOST", host)
 
-        result = listen.on_bulletin_message(None, deliver(), None, message_body(host))
+        result = listen.on_bulletin_message(ROUTING_KEY, message_body(host))
 
         assert await resolve(result) is None
     # HPFX and DD are the same server here: 2 attempts each

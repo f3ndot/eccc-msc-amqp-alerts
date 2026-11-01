@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class QuartWithConsumerOrc(Quart):
     consumer_orc: "ConsumerOrchestrator"
+    consumer_orc_task: asyncio.Task
 
 
 app = QuartWithConsumerOrc(__name__)
@@ -144,20 +145,24 @@ class ConsumerOrchestrator:
                 f"SKIPPING PUSH {message} for full websocket queue {id(conn.queue)}"
             )
 
-    async def run(self, loop):
+    async def run(self):
         print("🔌 Connecting... ", end="", flush=True)
-        self.consumer.run(
-            loop=loop,
-            on_started=lambda: print("OK! Now listening for messages... 👂"),
-        )
+        try:
+            await self.consumer.start(
+                on_started=lambda: print("OK! Now listening for messages... 👂")
+            )
+        except Exception:
+            # Once connected, aio-pika reconnects by itself. Only the first attempt
+            # can fail like this
+            logger.exception("Unable to connect to AMQP. No messages will arrive!")
 
 
 @app.before_serving
 async def start_amqp_listening():
     logger.info("Starting AMQP listening alongside Quart")
-    loop = asyncio.get_running_loop()
     app.consumer_orc = ConsumerOrchestrator(consumer)
-    loop.create_task(app.consumer_orc.run(loop=loop))
+    # Connecting happens in the background so the webserver can start serving
+    app.consumer_orc_task = asyncio.create_task(app.consumer_orc.run())
 
 
 @app.after_serving
@@ -167,7 +172,7 @@ async def shutdown():
         f"Gracefully stopping AMQP listening (waiting up to {max_wait_secs}s)..."
     )
     try:
-        await app.consumer_orc.consumer.stop_and_wait(timeout=max_wait_secs)
+        await asyncio.wait_for(app.consumer_orc.consumer.stop(), max_wait_secs)
         logger.info("Gracefully STOPPED AMQP listening!")
     except asyncio.TimeoutError:
         logger.info(f"TIMED OUT! Waited {max_wait_secs}s. Forcefully shutting down...")

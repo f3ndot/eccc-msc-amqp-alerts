@@ -86,7 +86,6 @@ welcome to redistribute it under certain conditions.
 - Make this an optionally importable Python library and people pass in their callback hooks?
 - Finish parsing alert CAP files and display a fun way (make own pseudo alphanumeric equivalent and maybe an ascii or ansi ⚠️)
 - Handle recovering previously declared queues from a former session (delete or purge first?)
-- Recover from 'soft fails' with Pika (eg restarting a channel or connection)
 - Handle graceful remote shutdowns with a restart attempt before giving up
 - Simplify message parsing into dataclass/de-dupe AHL parsing
 - CAP files don't get in the way of "loading previous bulletins" (differentiate between alphanum and CAP messages as dataclasses)
