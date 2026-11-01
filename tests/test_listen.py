@@ -1,6 +1,8 @@
 import asyncio
+import contextlib
 import inspect
 import socket
+import threading
 import time
 
 import pika.spec
@@ -10,8 +12,6 @@ from werkzeug import Request, Response
 
 from eccc_msc_amqp_alerts import listen
 
-# Dated the 1st: header decoding assumes the bulletin's day falls in the current
-# month, and the 1st is valid in every month
 PATH = (
     "20261101/WXO-DD/bulletins/alphanumeric/20261101/SA/CYXC/15/"
     "SACN43_CYXC_011500___12345"
@@ -41,13 +41,65 @@ def dd_host(httpserver: HTTPServer, monkeypatch) -> str:
     return httpserver.url_for("/dd/")
 
 
-@pytest.fixture
-def unreachable_host(monkeypatch) -> str:
-    """A host nothing is listening on, used for both HPFX and DD"""
+def closed_port_host() -> str:
+    """A host nothing is listening on, so connections are refused"""
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
-    host = f"http://127.0.0.1:{port}/"
+    return f"http://127.0.0.1:{port}/"
+
+
+@contextlib.contextmanager
+def hung_host():
+    """A host that accepts connections but never answers, like a hung server"""
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.listen()
+        yield f"http://127.0.0.1:{sock.getsockname()[1]}/"
+
+
+@contextlib.contextmanager
+def dropping_host(drop_first: int, body: str = BULLETIN):
+    """Closes its first `drop_first` connections without answering, like a server
+    closing an idle keep-alive connection just as it's reused, then answers normally.
+    Yields the host and a list that records each attempt."""
+    attempts: list[int] = []
+    stop = threading.Event()
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        sock.listen()
+        sock.settimeout(0.05)
+
+        def serve():
+            while not stop.is_set():
+                try:
+                    conn, _ = sock.accept()
+                except TimeoutError:
+                    continue
+                with conn:
+                    conn.recv(65536)
+                    attempts.append(1)
+                    if len(attempts) > drop_first:
+                        data = body.encode()
+                        conn.sendall(
+                            b"HTTP/1.1 200 OK\r\nConnection: close\r\n"
+                            + f"Content-Length: {len(data)}\r\n\r\n".encode()
+                            + data
+                        )
+
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+        try:
+            yield f"http://127.0.0.1:{sock.getsockname()[1]}/", attempts
+        finally:
+            stop.set()
+            thread.join()
+
+
+@pytest.fixture
+def unreachable_host(monkeypatch) -> str:
+    """A host nothing is listening on, used for both HPFX and DD"""
+    host = closed_port_host()
     monkeypatch.setattr(listen, "HPFX_HOST", host)
     return host
 
@@ -127,20 +179,14 @@ async def test_bulletin_message_returns_none_when_hosts_unreachable(
     assert await resolve(result) is None
 
 
-async def test_bulletin_message_returns_none_on_timeout(
-    httpserver: HTTPServer, dd_host: str, monkeypatch
-):
+async def test_bulletin_message_returns_none_when_hpfx_and_dd_time_out(monkeypatch):
     monkeypatch.setattr(listen, "FETCH_TIMEOUT_SECS", 0.2)
+    with hung_host() as host:
+        monkeypatch.setattr(listen, "HPFX_HOST", host)
 
-    def slow(_request: Request) -> Response:
-        time.sleep(1)
-        return Response(BULLETIN)
+        result = listen.on_bulletin_message(None, deliver(), None, message_body(host))
 
-    httpserver.expect_request(f"/hpfx/{PATH}").respond_with_handler(slow)
-
-    result = listen.on_bulletin_message(None, deliver(), None, message_body(dd_host))
-
-    assert await resolve(result) is None
+        assert await resolve(result) is None
 
 
 async def test_slow_fetch_does_not_block_the_event_loop(
@@ -167,3 +213,85 @@ async def test_slow_fetch_does_not_block_the_event_loop(
         ticker.cancel()
     # A blocking fetch would stall the loop for the whole 0.5s, leaving ~0 ticks
     assert ticks >= 5
+
+
+async def test_falls_back_to_dd_when_hpfx_unreachable(
+    httpserver: HTTPServer, dd_host: str, monkeypatch
+):
+    monkeypatch.setattr(listen, "HPFX_HOST", closed_port_host())
+    httpserver.expect_oneshot_request(f"/dd/{PATH}").respond_with_data(BULLETIN)
+
+    assert await resolve(listen.fetch_bulletin_text(dd_host, PATH)) == BULLETIN
+    httpserver.check_assertions()
+
+
+async def test_falls_back_to_dd_when_hpfx_times_out(
+    httpserver: HTTPServer, dd_host: str, monkeypatch
+):
+    monkeypatch.setattr(listen, "FETCH_TIMEOUT_SECS", 0.2)
+    with hung_host() as host:
+        monkeypatch.setattr(listen, "HPFX_HOST", host)
+        httpserver.expect_oneshot_request(f"/dd/{PATH}").respond_with_data(BULLETIN)
+
+        assert await resolve(listen.fetch_bulletin_text(dd_host, PATH)) == BULLETIN
+    httpserver.check_assertions()
+
+
+async def test_bulletin_dated_end_of_last_month_still_fetched(
+    httpserver: HTTPServer, dd_host: str
+):
+    """Header dates only give the day, so the 31st must decode in any month"""
+    path = PATH.replace("SACN43_CYXC_011500", "SACN43_CYXC_311500")
+    httpserver.expect_request(f"/hpfx/{path}").respond_with_data(BULLETIN)
+
+    result = listen.on_bulletin_message(
+        None, deliver(), None, message_body(dd_host, path)
+    )
+
+    assert await resolve(result) == BULLETIN
+
+
+async def test_falls_back_to_dd_quickly_when_hpfx_cannot_connect(
+    httpserver: HTTPServer, dd_host: str, monkeypatch
+):
+    """Connecting includes the TLS handshake, which is where HPFX has been seen to
+    hang. That shouldn't hold up every bulletin for the full fetch timeout."""
+    monkeypatch.setattr(listen, "FETCH_TIMEOUT_SECS", 5)
+    monkeypatch.setattr(listen, "FETCH_CONNECT_TIMEOUT_SECS", 0.2)
+    with hung_host() as host:
+        # The TCP connection succeeds, but the TLS handshake never completes
+        monkeypatch.setattr(listen, "HPFX_HOST", host.replace("http://", "https://"))
+        httpserver.expect_oneshot_request(f"/dd/{PATH}").respond_with_data(BULLETIN)
+
+        started = time.monotonic()
+        assert await resolve(listen.fetch_bulletin_text(dd_host, PATH)) == BULLETIN
+        assert time.monotonic() - started < 2
+    httpserver.check_assertions()
+
+
+async def test_retries_dd_once_when_it_drops_the_connection(monkeypatch):
+    monkeypatch.setattr(listen, "HPFX_HOST", closed_port_host())
+    with dropping_host(drop_first=1) as (dd, attempts):
+        assert await resolve(listen.fetch_bulletin_text(dd, PATH)) == BULLETIN
+    assert len(attempts) == 2
+
+
+async def test_retries_hpfx_before_falling_back_to_dd(monkeypatch):
+    with dropping_host(drop_first=1) as (hpfx, attempts):
+        monkeypatch.setattr(listen, "HPFX_HOST", hpfx)
+        # Any request to DD would be refused
+        result = listen.fetch_bulletin_text(closed_port_host(), PATH)
+
+        assert await resolve(result) == BULLETIN
+    assert len(attempts) == 2
+
+
+async def test_gives_up_after_one_retry(monkeypatch):
+    with dropping_host(drop_first=99) as (host, attempts):
+        monkeypatch.setattr(listen, "HPFX_HOST", host)
+
+        result = listen.on_bulletin_message(None, deliver(), None, message_body(host))
+
+        assert await resolve(result) is None
+    # HPFX and DD are the same server here: 2 attempts each
+    assert len(attempts) == 4

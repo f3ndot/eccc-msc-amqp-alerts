@@ -56,6 +56,10 @@ ALERTS_ROUTING_KEY = "v02.post.*.WXO-DD.alerts.#"
 HPFX_HOST = "https://hpfx.collab.science.gc.ca/"
 # Per request, so a fetch that falls back to DD can take up to twice this
 FETCH_TIMEOUT_SECS = 10
+# Connecting (including the TLS handshake) normally takes well under a second. Giving
+# up sooner means a down HPFX delays each bulletin by this, not FETCH_TIMEOUT_SECS,
+# before falling back to DD
+FETCH_CONNECT_TIMEOUT_SECS = 3
 
 
 _http_client: httpx.AsyncClient | None = None
@@ -83,19 +87,37 @@ async def close_http_client():
         _http_client = None
 
 
+def fetch_timeout() -> httpx.Timeout:
+    return httpx.Timeout(FETCH_TIMEOUT_SECS, connect=FETCH_CONNECT_TIMEOUT_SECS)
+
+
+async def _get(url: str) -> httpx.Response:
+    try:
+        return await http_client().get(url, timeout=fetch_timeout())
+    except httpx.RemoteProtocolError as e:
+        # Usually the server closed an idle keep-alive connection just as we reused
+        # it. A GET is safe to repeat, and the retry gets a fresh connection.
+        logger.info(f"Retrying {url} after {e!r}")
+        return await http_client().get(url, timeout=fetch_timeout())
+
+
 async def fetch_bulletin_text(original_host: str, path: str):
     logger.debug(f"Fetching bulletin: host={original_host} path={path}")
     hpfx_url = f"{HPFX_HOST}{path}"
     # TODO: exponential backoff and retry
-    response = await http_client().get(hpfx_url, timeout=FETCH_TIMEOUT_SECS)
-    if not response.is_success:  # fall back to original source (probably always DD)
+    hpfx_problem = None
+    try:
+        response = await _get(hpfx_url)
+        if not response.is_success:
+            hpfx_problem = f"{response.status_code} {response.reason_phrase}"
+    except httpx.HTTPError as e:  # eg. HPFX is down or timing out
+        hpfx_problem = repr(e)
+    if hpfx_problem:  # fall back to original source (probably always DD)
         logger.warning(
-            f"Unable to fetch from HPFX {hpfx_url} ({response.status_code} {response.reason_phrase}), falling back to original host: "
+            f"Unable to fetch from HPFX {hpfx_url} ({hpfx_problem}), falling back to original host: "
             f"{original_host}{path}"
         )
-        response = await http_client().get(
-            f"{original_host}{path}", timeout=FETCH_TIMEOUT_SECS
-        )
+        response = await _get(f"{original_host}{path}")
 
     if not response.is_success:
         logger.error(
