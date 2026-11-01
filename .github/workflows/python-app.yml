@@ -34,4 +34,6 @@ jobs:
       - name: Check types with mypy
         run: uv run mypy src/eccc_msc_amqp_alerts
       - name: Check formatting with black
-        run: uv run black --check src/eccc_msc_amqp_alerts
+        run: uv run black --check src/eccc_msc_amqp_alerts tests
+      - name: Run tests
+        run: uv run pytest

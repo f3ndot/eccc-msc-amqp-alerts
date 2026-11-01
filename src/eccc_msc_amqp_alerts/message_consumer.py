@@ -7,6 +7,7 @@ import asyncio
 import typing as t
 import logging
 import functools
+import inspect
 import pika
 import pika.spec
 from pika.exchange_type import ExchangeType
@@ -25,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class TopicStatistics:
-    routing_keys: defaultdict[str, int] = defaultdict(int)
+    def __init__(self) -> None:
+        self.routing_keys: defaultdict[str, int] = defaultdict(int)
 
     def __str__(self) -> str:
         s = [
@@ -86,6 +88,8 @@ class MessageConsumer:
         self.on_any_message = on_any_message
 
         self._queues: list[Queue] = []
+        # Messages still being handled. asyncio only keeps weak references to tasks
+        self._message_tasks: set[asyncio.Task] = set()
 
         self._url = self.CONNECTION_STR
         # In production, experiment with higher prefetch values
@@ -486,7 +490,9 @@ class MessageConsumer:
 
     def _wrap_callback(self, func: OnMessageCallback):
         """Returns a function/callable that wraps the underlying callback function, so
-        it can collect some statistics"""
+        it can collect some statistics. The callback may be async, eg. to fetch
+        bulletin text without blocking the event loop, so each message is finished in
+        a background task. Messages can therefore finish out of order."""
 
         def wraps(
             channel: "pika.channel.Channel",
@@ -496,11 +502,31 @@ class MessageConsumer:
         ):
             routing_key: str = method.routing_key
             self.stats.routing_keys[routing_key] += 1
+            task = asyncio.get_running_loop().create_task(
+                self._handle_message(func, channel, method, properties, body)
+            )
+            self._message_tasks.add(task)
+            task.add_done_callback(self._message_tasks.discard)
+
+        return wraps
+
+    async def _handle_message(
+        self,
+        func: OnMessageCallback,
+        channel: "pika.channel.Channel",
+        method: pika.spec.Basic.Deliver,
+        properties: pika.spec.BasicProperties,
+        body: bytes,
+    ):
+        routing_key: str = method.routing_key
+        try:
             ret = func(channel, method, properties, body)
+            if inspect.isawaitable(ret):
+                ret = await ret
             if self.on_any_message:
                 logger.info(
                     f"Calling on_any_message: {self.on_any_message} with {(routing_key, body, 'ret...')}"
                 )
                 self.on_any_message(routing_key, body, ret)
-
-        return wraps
+        except Exception:
+            logger.exception(f"Failed handling message {routing_key}: {body!r}")

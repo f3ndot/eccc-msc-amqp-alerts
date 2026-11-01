@@ -7,10 +7,8 @@ import sys
 from collections import deque
 from typing import Deque
 
+import httpx
 import pika.spec
-import requests
-import requests.exceptions
-import urllib3.exceptions
 from pika.adapters.blocking_connection import BlockingChannel
 
 from .config import config
@@ -56,29 +54,50 @@ ALERTS_ROUTING_KEY = "v02.post.*.WXO-DD.alerts.#"
 # ECCC implores consumers to fetch from HPFX to keep loads low on DD. Message paths are
 # relative to the server root, so they work on either host.
 HPFX_HOST = "https://hpfx.collab.science.gc.ca/"
+# Per request, so a fetch that falls back to DD can take up to twice this
+FETCH_TIMEOUT_SECS = 10
 
 
-def fetch_bulletin_text(original_host: str, path: str):
+_http_client: httpx.AsyncClient | None = None
+
+
+def http_client() -> httpx.AsyncClient:
+    """Shared, so fetches reuse connections to HPFX and DD"""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            headers={"User-Agent": user_agent},
+            # Not for HTTP/2 itself: HPFX still answers in HTTP/1.1. Without it, httpx
+            # offers only "http/1.1" during the TLS handshake, which HPFX hangs on
+            # about 30% of the time until the connect times out. Offering "h2" too
+            # avoids that. DD is unaffected either way.
+            http2=True,
+        )
+    return _http_client
+
+
+async def close_http_client():
+    global _http_client
+    if _http_client is not None:
+        await _http_client.aclose()
+        _http_client = None
+
+
+async def fetch_bulletin_text(original_host: str, path: str):
     logger.debug(f"Fetching bulletin: host={original_host} path={path}")
     hpfx_url = f"{HPFX_HOST}{path}"
-    # TODO: exponential backoff and retry. TODO: use request sessions?
-    response = requests.get(
-        hpfx_url,
-        headers={"User-Agent": user_agent},
-        timeout=10,
-    )
-    if not response.ok:  # fall back to original source (probably always DD)
+    # TODO: exponential backoff and retry
+    response = await http_client().get(hpfx_url, timeout=FETCH_TIMEOUT_SECS)
+    if not response.is_success:  # fall back to original source (probably always DD)
         logger.warning(
-            f"Unable to fetch from HPFX {hpfx_url} ({response.status_code} {response.reason}), falling back to original host: "
+            f"Unable to fetch from HPFX {hpfx_url} ({response.status_code} {response.reason_phrase}), falling back to original host: "
             f"{original_host}{path}"
         )
-        response = requests.get(
-            f"{original_host}{path}",
-            headers={"User-Agent": user_agent},
-            timeout=10,
+        response = await http_client().get(
+            f"{original_host}{path}", timeout=FETCH_TIMEOUT_SECS
         )
 
-    if not response.ok:
+    if not response.is_success:
         logger.error(
             f"Unable to get bulletin from either HPFX or {original_host}{path}"
         )
@@ -91,7 +110,7 @@ def fetch_bulletin_text(original_host: str, path: str):
     return bulletin_text
 
 
-def on_bulletin_message(
+async def on_bulletin_message(
     _channel: BlockingChannel,
     method: pika.spec.Basic.Deliver,
     properties: pika.spec.BasicProperties,
@@ -106,14 +125,10 @@ def on_bulletin_message(
     logger.debug(f"WMO GTS Abbreviated Header Section: {wmo_gts_comms_header}")
     logger.info(f"WMO GTS Header:\n{pretty_wmo_header(wmo_gts_comms_header)}")
     try:
-        text = fetch_bulletin_text(host, path)
+        text = await fetch_bulletin_text(host, path)
         logger.info("End of bulletin")
         return text
-    except (
-        TimeoutError,
-        requests.exceptions.RequestException,
-        urllib3.exceptions.MaxRetryError,
-    ) as e:
+    except httpx.HTTPError as e:
         logger.warning(
             f"Timed out trying to fetch bulletin text. Returning None. Exception: {repr(e)}"
         )

@@ -13,7 +13,7 @@ from datetime import datetime
 from quart import Quart, render_template, send_file, websocket
 from quart.utils import MustReloadError, observe_changes, restart
 
-from .listen import consumer
+from .listen import close_http_client, consumer
 from .message_consumer import MessageConsumer
 from .types import OnMessageAIOQueue
 from .wmo_header import AIRMET_SIGMET_SUBTYPES
@@ -171,6 +171,7 @@ async def shutdown():
         logger.info("Gracefully STOPPED AMQP listening!")
     except asyncio.TimeoutError:
         logger.info(f"TIMED OUT! Waited {max_wait_secs}s. Forcefully shutting down...")
+    await close_http_client()
 
 
 @app.route("/")

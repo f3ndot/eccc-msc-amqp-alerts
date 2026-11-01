@@ -8,10 +8,10 @@ readme = "README.md"
 license = "GPL-3.0-or-later" # required due to GTStoWIS2
 dependencies = [
     "pika>=1.4.4,<2",
-    "requests>=2.34.2,<3",
     "gtstowis2 @ git+https://github.com/wmo-im/GTStoWIS2.git@a29ec7818c9a65a9bbba30bb59d48859e553ebec",
     "lxml>=6.1.3,<7",
     "quart>=0.20.0,<0.21",
+    "httpx[http2]>=0.28.1,<0.29",
 ]
 
 [project.urls]
@@ -24,9 +24,17 @@ dev = [
     "flake8>=7.5.0,<8",
     "mypy>=2.4.1,<3",
     "flake8-bugbear>=26.10.27,<27",
-    "types-requests>=2.33.0.20261030,<3",
     "lxml-stubs>=0.5.1,<0.6",
+    "pytest>=9.2.0,<10",
+    "pytest-asyncio>=1.4.1,<2",
+    "pytest-httpserver>=1.2.0,<2",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Run `async def` tests without needing a marker on each one
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.uv]
 
