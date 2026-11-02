@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from eccc_msc_amqp_alerts.wmo_header import decode_header
+from eccc_msc_amqp_alerts.wmo_header import AIRMET_SIGMET_SUBTYPES, decode_header
 
 
 def utc(*args) -> datetime:
@@ -64,3 +64,20 @@ def test_decodes_header_fields():
 def test_rejects_malformed_headers():
     with pytest.raises(ValueError):
         decode_header("not a header")
+
+
+@pytest.mark.parametrize(
+    "header, is_airmet_sigmet",
+    [
+        ("WACN31 CWAO 011500", True),  # AIRMET
+        ("WSCN31 CWAO 011500", True),  # SIGMET
+        ("WVCN31 CWAO 011500", True),  # SIGMET for volcanic ash
+        ("WCCN31 CWAO 011500", True),  # SIGMET for tropical cyclones
+        ("WWCN11 CWTO 011500", False),  # Other warnings
+        ("SACN43 CYXC 011500", False),  # METAR
+    ],
+)
+def test_airmet_sigmet_subtypes_match_decoded_headers(header, is_airmet_sigmet):
+    subtype = decode_header(header, now=utc(2026, 11, 1, 16, 0))["data_type_sub"]
+
+    assert (subtype in AIRMET_SIGMET_SUBTYPES) == is_airmet_sigmet

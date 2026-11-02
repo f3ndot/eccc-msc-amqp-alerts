@@ -14,11 +14,12 @@ from datetime import datetime, timezone
 
 from GTStoWIS2 import GTStoWIS2
 
+# decode_header()'s "data_type_sub" for these bulletins, eg. "WS" for SIGMETs
 AIRMET_SIGMET_SUBTYPES = {
-    "warnings/aviation/airmet",
-    "warnings/aviation/sigmet",
-    "warnings/aviation/sigmet/clouds/ash",
-    "warnings/aviation/sigmet/cyclone",
+    "data/core/weather/advisories-warnings/aviation/airmet",
+    "data/core/weather/advisories-warnings/aviation/sigmet",
+    "data/core/weather/advisories-warnings/aviation/sigmet/clouds/ash",
+    "data/core/weather/advisories-warnings/aviation/sigmet/cyclone",
 }
 
 country_or_territory_designators_table = {
