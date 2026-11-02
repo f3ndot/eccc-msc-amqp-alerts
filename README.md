@@ -52,6 +52,8 @@ uv run python -m eccc_msc_amqp_alerts -v -w --host 0.0.0.0 --port 8080
 On macOS, port 5000 is usually taken by AirPlay Receiver, so you'll likely want a
 different port there.
 
+To run the web server on a server behind nginx, see [`deploy/`](deploy/README.md).
+
 ```
 usage: eccc_msc_amqp_alerts [-h] [-d] [-v] [-s] [-w] [--host HOST] [-p PORT]
 

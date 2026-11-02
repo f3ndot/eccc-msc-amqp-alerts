@@ -1,0 +1,27 @@
+[Unit]
+Description=ECCC MSC AMQP Alerts web server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=weather-alerts
+Group=weather-alerts
+# Where config.ini is read from
+WorkingDirectory=/srv/weather-alerts
+# Not -d: that turns on auto-reload and Quart's debug mode. Add -v for more logging
+ExecStart=/srv/weather-alerts/app/.venv/bin/python -m eccc_msc_amqp_alerts -w
+# So printed bulletins reach the journal as they happen
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+# The app shuts down gracefully on SIGTERM, and forces an exit itself after 10s
+TimeoutStopSec=20
+
+NoNewPrivileges=true
+ProtectSystem=strict
+# Hides /home, so the app must live elsewhere, eg. /srv
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
