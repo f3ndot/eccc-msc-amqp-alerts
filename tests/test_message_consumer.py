@@ -132,7 +132,7 @@ def connection(monkeypatch) -> FakeConnection:
     return connection
 
 
-async def test_start_declares_binds_and_consumes_each_subscription(
+async def test_start_binds_one_queue_for_all_subscriptions(
     connection: FakeConnection, monkeypatch
 ):
     monkeypatch.setattr(message_consumer.config, "name", "tester")
@@ -144,34 +144,102 @@ async def test_start_declares_binds_and_consumes_each_subscription(
     await consumer.start(on_started=lambda: started.append(True))
 
     assert connection.urls == [MessageConsumer.CONNECTION_STR]
-    queues = connection.channel_.queues
-    assert [q.name for q in queues] == [
-        "q_anonymous.eccc-msc-amqp-alerts.tester.bulletins_WW",
-        "q_anonymous.eccc-msc-amqp-alerts.tester.alerts",
+    # ECCC's server allows 1000 queues shared by every anonymous user
+    [queue] = connection.channel_.queues
+    assert queue.name == "q_anonymous.eccc-msc-amqp-alerts.tester"
+    assert queue.declare_kwargs == {"auto_delete": True}
+    assert queue.bindings == [
+        ("xpublic", "v02.post.*.bulletins.*.WW.#"),
+        ("xpublic", "v02.post.*.alerts.#"),
     ]
-    assert all(q.declare_kwargs == {"auto_delete": True} for q in queues)
-    assert [q.bindings for q in queues] == [
-        [("xpublic", "v02.post.*.bulletins.*.WW.#")],
-        [("xpublic", "v02.post.*.alerts.#")],
-    ]
-    assert all(len(q.consumers) == 1 and q.consumers[0][1] is True for q in queues)
+    assert len(queue.consumers) == 1
+    assert queue.consumers[0][1] is True  # no_ack
     assert started == [True]
 
 
-async def test_consumed_messages_reach_the_subscription_callback(
+async def test_consumed_messages_reach_the_matching_subscription(
+    connection: FakeConnection,
+):
+    bulletins, alerts = [], []
+    consumer = MessageConsumer()
+    consumer.subscribe_to_topic(
+        "bulletins",
+        "v02.post.*.WXO-DD.bulletins.alphanumeric.#",
+        lambda *a: bulletins.append(a),
+    )
+    consumer.subscribe_to_topic(
+        "alerts", "v02.post.*.WXO-DD.alerts.#", lambda *a: alerts.append(a)
+    )
+    await consumer.start()
+    on_message = connection.channel_.queues[0].consumers[0][0]
+    alert_key = "v02.post.20261031.WXO-DD.alerts.cap.20261031.CWTO.15"
+
+    await on_message(FakeMessage())
+    await on_message(FakeMessage(routing_key=alert_key))
+
+    assert bulletins == [(ROUTING_KEY, BODY)]
+    assert alerts == [(alert_key, BODY)]
+
+
+async def test_overlapping_subscriptions_handle_a_message_once(
     connection: FakeConnection,
 ):
     calls = []
     consumer = MessageConsumer()
+    consumer.subscribe_to_topic("all", "v02.post.#", lambda *a: calls.append("all"))
     consumer.subscribe_to_topic(
-        "alerts", "v02.post.*.alerts.#", lambda *a: calls.append(a)
+        "SA", "v02.post.*.*.*.*.*.SA.#", lambda *a: calls.append("SA")
     )
     await consumer.start()
 
-    on_message = connection.channel_.queues[0].consumers[0][0]
-    await on_message(FakeMessage())
+    await connection.channel_.queues[0].consumers[0][0](FakeMessage())
 
-    assert calls == [(ROUTING_KEY, BODY)]
+    assert calls == ["all"]
+
+
+async def test_ignores_messages_matching_no_subscription(
+    connection: FakeConnection, caplog
+):
+    calls = []
+    consumer = MessageConsumer()
+    consumer.subscribe_to_topic("alerts", "v02.post.*.alerts.#", calls.append)
+    await consumer.start()
+
+    await connection.channel_.queues[0].consumers[0][0](FakeMessage())
+
+    assert calls == []
+    assert consumer.stats.routing_keys == {}
+    assert "matching no subscription" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "pattern, routing_key, matches",
+    [
+        ("a.b.c", "a.b.c", True),
+        ("a.b.c", "a.b.d", False),
+        ("a.*.c", "a.b.c", True),
+        ("a.*.c", "a.c", False),  # "*" is exactly one word
+        ("a.*", "a.b.c", False),
+        ("a.#", "a", True),  # "#" is zero or more words
+        ("a.#", "a.b.c", True),
+        ("a.#.c", "a.c", True),
+        ("a.#.c", "a.b.b.c", True),
+        ("a.#.c", "a.b.b.d", False),
+        ("#", "a.b", True),
+        (
+            "v02.post.*.WXO-DD.bulletins.alphanumeric.*.SA.#",
+            ROUTING_KEY,
+            True,
+        ),
+        (
+            "v02.post.*.WXO-DD.bulletins.alphanumeric.*.WW.#",
+            ROUTING_KEY,
+            False,
+        ),
+    ],
+)
+def test_topic_matches(pattern, routing_key, matches):
+    assert message_consumer.topic_matches(pattern, routing_key) is matches
 
 
 async def test_stop_closes_the_connection(connection: FakeConnection):

@@ -2,7 +2,6 @@
 # Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
-import functools
 import inspect
 import logging
 import typing as t
@@ -45,9 +44,24 @@ class TopicStatistics:
             logger.info(line)
 
 
+def topic_matches(pattern: str, routing_key: str) -> bool:
+    """Whether a routing key matches an AMQP topic pattern, the way the server decides
+    which bindings a message matches: "*" matches exactly one dot-separated word and
+    "#" matches zero or more"""
+
+    def match(words: list[str], keys: list[str]) -> bool:
+        if not words:
+            return not keys
+        if words[0] == "#":
+            return any(match(words[1:], keys[i:]) for i in range(len(keys) + 1))
+        return bool(keys) and words[0] in ("*", keys[0]) and match(words[1:], keys[1:])
+
+    return match(pattern.split("."), routing_key.split("."))
+
+
 @dataclass
 class Subscription:
-    """A queue to declare, bind to the exchange and consume from once connected"""
+    """A routing key to bind our queue to, and what to call with its messages"""
 
     name: str
     routing_key: str
@@ -82,8 +96,11 @@ class MessageConsumer:
         return subscription
 
     async def start(self, on_started: t.Optional[t.Callable[[], t.Any]] = None):
-        """Connects, then declares, binds and consumes a queue for each subscription.
-        Returns once consuming; messages are then handled in the background.
+        """Connects, then declares a queue, binds it once per subscription and consumes
+        it. Returns once consuming; messages are then handled in the background.
+
+        One queue, not one per subscription: ECCC's server allows 1000 queues in total,
+        shared by everyone connecting anonymously.
 
         The connection is robust: if it drops, aio-pika keeps reconnecting and restores
         the queues, bindings and consumers. Only the very first connection attempt
@@ -94,26 +111,26 @@ class MessageConsumer:
         connection.close_callbacks.add(self._on_connection_lost)
         connection.reconnect_callbacks.add(self._on_reconnected)
         channel = await connection.channel()
+        queue_name = self._queue_name()
+        logger.info(f"Declaring queue {queue_name}")
+        # Deleted by the server once we stop consuming, so nothing is left behind
+        queue = await channel.declare_queue(queue_name, auto_delete=True)
         for subscription in self._subscriptions:
-            queue_name = self._queue_name(subscription.name)
-            logger.info(f"Declaring queue {queue_name}")
-            # Deleted by the server once we stop consuming, so nothing is left behind
-            queue = await channel.declare_queue(queue_name, auto_delete=True)
             logger.info(
                 f"Binding {self.EXCHANGE} to {queue_name} with {subscription.routing_key}"
+                f" for {subscription.name}"
             )
             await queue.bind(self.EXCHANGE, routing_key=subscription.routing_key)
-            await queue.consume(
-                functools.partial(self._handle_message, subscription.callback),
-                no_ack=True,  # let's keep it simple
-            )
-        logger.info(f"Consuming from {len(self._subscriptions)} queues")
+        await queue.consume(self._dispatch, no_ack=True)  # no_ack: let's keep it simple
+        logger.info(
+            f"Consuming from {queue_name} for {len(self._subscriptions)} subscriptions"
+        )
         if on_started:
             on_started()
 
     async def stop(self):
         """Closes the connection, which stops consuming. The server then deletes our
-        queues."""
+        queue."""
         if self._connection is not None:
             logger.info("Closing AMQP connection")
             self._stopping = True
@@ -129,8 +146,19 @@ class MessageConsumer:
     def _on_reconnected(self, _connection):
         logger.warning("AMQP connection re-established, consuming again")
 
-    def _queue_name(self, subname: str) -> str:
-        return f"q_anonymous.eccc-msc-amqp-alerts.{config.name}.{subname}"
+    def _queue_name(self) -> str:
+        return f"q_anonymous.eccc-msc-amqp-alerts.{config.name}"
+
+    async def _dispatch(self, message: AbstractIncomingMessage):
+        """Every subscription's messages arrive on the one queue, so route each to the
+        callback of the first subscription whose routing key it matches. A message
+        matching several is delivered to the queue, and so handled, only once."""
+        routing_key = message.routing_key or ""
+        for subscription in self._subscriptions:
+            if topic_matches(subscription.routing_key, routing_key):
+                await self._handle_message(subscription.callback, message)
+                return
+        logger.warning(f"Ignoring message matching no subscription: {routing_key}")
 
     async def _handle_message(
         self, callback: OnMessageCallback, message: AbstractIncomingMessage
