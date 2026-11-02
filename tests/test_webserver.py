@@ -138,3 +138,20 @@ def test_sigmet_filter_still_applies(orc):
 
     assert drain(filtering.queue) == []
     assert len(drain(everything.queue)) == 1
+
+
+async def test_shutdown_stops_waiting_to_connect(monkeypatch):
+    """eg. while waiting for room on ECCC's AMQP server"""
+    monkeypatch.setattr(
+        webserver.app,
+        "consumer_orc",
+        ConsumerOrchestrator(MessageConsumer()),
+        raising=False,
+    )
+    waiting = asyncio.create_task(asyncio.Event().wait())
+    monkeypatch.setattr(webserver.app, "consumer_orc_task", waiting, raising=False)
+
+    await webserver.shutdown()
+    await asyncio.sleep(0)
+
+    assert waiting.cancelled()

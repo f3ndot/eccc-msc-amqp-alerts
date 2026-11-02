@@ -184,6 +184,8 @@ async def shutdown():
     logger.info(
         f"Gracefully stopping AMQP listening (waiting up to {max_wait_secs}s)..."
     )
+    # Stop it still connecting, or waiting for room on the AMQP server
+    app.consumer_orc_task.cancel()
     try:
         await asyncio.wait_for(app.consumer_orc.consumer.stop(), max_wait_secs)
         logger.info("Gracefully STOPPED AMQP listening!")

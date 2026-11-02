@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass, field
 
+import aiormq
 import pytest
 
 from eccc_msc_amqp_alerts import message_consumer
@@ -277,3 +278,108 @@ async def test_no_connection_lost_warning_when_stopping(
         callback(connection, asyncio.CancelledError())
 
     assert "AMQP connection lost" not in caplog.text
+
+
+# Retrying when ECCC's server is at its limit of 1000 queues
+
+QUEUE_LIMIT_ERROR = (
+    "PRECONDITION_FAILED - cannot declare queue 'q_anonymous.eccc-msc-amqp-alerts."
+    "tester': queue limit in vhost '/' (1000) is reached"
+)
+
+
+class FailingChannel(FakeChannel):
+    def __init__(self, error: Exception | None):
+        super().__init__()
+        self.error = error
+
+    async def declare_queue(self, name, **kwargs):
+        if self.error:
+            raise self.error
+        return await super().declare_queue(name, **kwargs)
+
+
+class Connections(list[FakeConnection]):
+    """Every connection made, in order. Declaring a queue fails with each of `errors`
+    in turn, then succeeds."""
+
+    def __init__(self):
+        super().__init__()
+        self.errors: list[Exception] = []
+
+
+@pytest.fixture
+def connections(monkeypatch) -> Connections:
+    """A new connection per connect"""
+    made = Connections()
+    errors = made.errors
+
+    async def connect_robust(url):
+        connection = FakeConnection()
+        connection.channel_ = FailingChannel(errors.pop(0) if errors else None)
+        made.append(connection)
+        return connection
+
+    monkeypatch.setattr(message_consumer.aio_pika, "connect_robust", connect_robust)
+    monkeypatch.setattr(message_consumer, "QUEUE_LIMIT_FIRST_RETRY_SECS", 0)
+    return made
+
+
+def test_retry_delays_double_up_to_once_an_hour():
+    delays = message_consumer.queue_limit_retry_delays()
+
+    assert [next(delays) for _ in range(12)] == [
+        10, 20, 40, 80, 160, 320, 640, 1280, 2560, 3600, 3600, 3600
+    ]  # fmt: skip
+
+
+async def test_retries_while_server_queue_limit_is_reached(connections, caplog):
+    connections.errors += [
+        aiormq.exceptions.ChannelPreconditionFailed(QUEUE_LIMIT_ERROR)
+    ] * 2
+    consumer = MessageConsumer()
+    started = []
+
+    await consumer.start(on_started=lambda: started.append(True))
+
+    assert len(connections) == 3
+    # Failed attempts don't hold connections open while waiting
+    assert [c.closed for c in connections] == [True, True, False]
+    assert len(connections[-1].channel_.queues[0].consumers) == 1
+    assert started == [True]
+    assert caplog.text.count("no room for our queue") == 2
+
+
+async def test_other_precondition_failures_are_not_retried(connections):
+    connections.errors.append(
+        aiormq.exceptions.ChannelPreconditionFailed(
+            "PRECONDITION_FAILED - inequivalent arg 'auto_delete' for queue"
+        )
+    )
+
+    with pytest.raises(aiormq.exceptions.ChannelPreconditionFailed):
+        await MessageConsumer().start()
+
+    assert len(connections) == 1
+    assert connections[0].closed
+
+
+async def test_stopping_while_waiting_to_retry_leaves_nothing_open(
+    connections, monkeypatch
+):
+    monkeypatch.setattr(message_consumer, "QUEUE_LIMIT_FIRST_RETRY_SECS", 60)
+    connections.errors.append(
+        aiormq.exceptions.ChannelPreconditionFailed(QUEUE_LIMIT_ERROR)
+    )
+    consumer = MessageConsumer()
+    task = asyncio.create_task(consumer.start())
+    while not connections or not connections[0].closed:
+        await asyncio.sleep(0)
+
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    await consumer.stop()
+
+    assert len(connections) == 1
+    assert connections[0].closed

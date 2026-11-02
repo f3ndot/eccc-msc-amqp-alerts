@@ -2,6 +2,7 @@
 # Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
+import asyncio
 import inspect
 import logging
 import typing as t
@@ -9,12 +10,26 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import aio_pika
+import aiormq
 from aio_pika.abc import AbstractIncomingMessage, AbstractRobustConnection
 
 from .config import config
 from .types import OnAnyMessageCallable, OnMessageCallback
 
 logger = logging.getLogger(__name__)
+
+# ECCC's server allows 1000 queues in total, shared by everyone connecting anonymously,
+# and refuses new ones while full. Starting waits this long before trying again,
+# doubling each time up to the maximum
+QUEUE_LIMIT_FIRST_RETRY_SECS = 10
+QUEUE_LIMIT_MAX_RETRY_SECS = 60 * 60
+
+
+def queue_limit_retry_delays() -> t.Iterator[int]:
+    secs = QUEUE_LIMIT_FIRST_RETRY_SECS
+    while True:
+        yield secs
+        secs = min(secs * 2, QUEUE_LIMIT_MAX_RETRY_SECS)
 
 
 class TopicStatistics:
@@ -102,14 +117,45 @@ class MessageConsumer:
         One queue, not one per subscription: ECCC's server allows 1000 queues in total,
         shared by everyone connecting anonymously.
 
+        If the server has no room for our queue, keeps retrying, waiting longer each
+        time (see QUEUE_LIMIT_FIRST_RETRY_SECS).
+
         The connection is robust: if it drops, aio-pika keeps reconnecting and restores
-        the queues, bindings and consumers. Only the very first connection attempt
+        the queue, bindings and consumer. Only the very first connection attempt
         raises if it fails."""
+        retry_delays = queue_limit_retry_delays()
+        while True:
+            try:
+                await self._connect_and_consume()
+                break
+            except aiormq.exceptions.ChannelPreconditionFailed as e:
+                # Other preconditions, eg. our queue already existing with different
+                # settings, won't fix themselves
+                if "queue limit" not in str(e):
+                    raise
+                retry_secs = next(retry_delays)
+                logger.warning(
+                    "ECCC's AMQP server has no room for our queue (it allows 1000, "
+                    f"shared by everyone). Trying again in {retry_secs}s: {e}"
+                )
+                await asyncio.sleep(retry_secs)
+        if on_started:
+            on_started()
+
+    async def _connect_and_consume(self):
         logger.info(f"Connecting to {self._url}...")
         connection = await aio_pika.connect_robust(self._url)
+        try:
+            await self._consume(connection)
+        except BaseException:
+            # Not left open while waiting to retry, or after being cancelled
+            await connection.close()
+            raise
         self._connection = connection
         connection.close_callbacks.add(self._on_connection_lost)
         connection.reconnect_callbacks.add(self._on_reconnected)
+
+    async def _consume(self, connection: AbstractRobustConnection):
         channel = await connection.channel()
         queue_name = self._queue_name()
         logger.info(f"Declaring queue {queue_name}")
@@ -125,8 +171,6 @@ class MessageConsumer:
         logger.info(
             f"Consuming from {queue_name} for {len(self._subscriptions)} subscriptions"
         )
-        if on_started:
-            on_started()
 
     async def stop(self):
         """Closes the connection, which stops consuming. The server then deletes our
