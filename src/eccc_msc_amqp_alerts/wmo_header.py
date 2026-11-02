@@ -1,5 +1,5 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 
@@ -11,13 +11,15 @@
 # Data type designator T1 Matrix Table for T1T2A1A2ii definitions
 import re
 from datetime import datetime, timezone
+
 from GTStoWIS2 import GTStoWIS2
 
+# decode_header()'s "data_type_sub" for these bulletins, eg. "WS" for SIGMETs
 AIRMET_SIGMET_SUBTYPES = {
-    "warnings/aviation/airmet",
-    "warnings/aviation/sigmet",
-    "warnings/aviation/sigmet/clouds/ash",
-    "warnings/aviation/sigmet/cyclone",
+    "data/core/weather/advisories-warnings/aviation/airmet",
+    "data/core/weather/advisories-warnings/aviation/sigmet",
+    "data/core/weather/advisories-warnings/aviation/sigmet/clouds/ash",
+    "data/core/weather/advisories-warnings/aviation/sigmet/cyclone",
 }
 
 country_or_territory_designators_table = {
@@ -321,12 +323,34 @@ pattern = re.compile(
 gts_tables = GTStoWIS2()
 
 
-def decode_header(wmo_gts_comms_header: str):
+def _infer_datetime(day: int, hour: int, minute: int, now: datetime) -> datetime:
+    """Headers only carry the day of the month, so pick the month (and year) that puts
+    the date closest to `now`. Late bulletins from the end of last month, or ones
+    stamped slightly ahead from the start of next month, are then dated correctly."""
+    candidates = []
+    for month_offset in (-1, 0, 1):
+        months = now.year * 12 + (now.month - 1) + month_offset
+        year, month = divmod(months, 12)
+        try:
+            candidates.append(
+                datetime(year, month + 1, day, hour, minute, tzinfo=timezone.utc)
+            )
+        except ValueError:  # eg. the 31st in a 30 day month
+            continue
+    if not candidates:
+        raise ValueError(f"No month near {now:%Y-%m} has a day {day}")
+    return min(candidates, key=lambda candidate: abs(candidate - now))
+
+
+def decode_header(wmo_gts_comms_header: str, now: datetime | None = None):
+    """Decodes a header like "WWCN11 CWTO 311430". Its date is inferred relative to
+    `now`, which defaults to the current time"""
     result = pattern.match(wmo_gts_comms_header)
     if result is None:
         raise ValueError("Invalid header. Must be format of 'T₁T₂A₁A₂ii CCCC YYGGgg'")
     parsed_header = result.groupdict()
-    current_utc_time = datetime.utcnow()
+    if now is None:
+        now = datetime.now(timezone.utc)
 
     data_type_1_tbl = gts_tables.tableA.get(parsed_header["data_type_1"], {})
 
@@ -357,13 +381,11 @@ def decode_header(wmo_gts_comms_header: str):
         "data_type_sub": data_type_1_tbl["T2"].get(parsed_header["data_type_2"]),
         "area": area,
         "centre": best_centre_name,
-        "datetime": datetime(
-            current_utc_time.year,
-            current_utc_time.month,
-            int(parsed_header["datetime"][0:2]),
-            int(parsed_header["datetime"][2:4]),
-            int(parsed_header["datetime"][4:6]),
-            tzinfo=timezone.utc,
+        "datetime": _infer_datetime(
+            day=int(parsed_header["datetime"][0:2]),
+            hour=int(parsed_header["datetime"][2:4]),
+            minute=int(parsed_header["datetime"][4:6]),
+            now=now,
         ),
     }
 

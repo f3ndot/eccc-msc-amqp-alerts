@@ -1,5 +1,5 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 import argparse
@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(
     prog="eccc_msc_amqp_alerts",
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description="Listen to and print alerts and bulletins from Environment and Climate Change Canada's Metereological Service Canada Datamart AMQP server",
-    epilog="""Copyright (C) 2022  Justin A. S. Bull
+    epilog="""Copyright (C) 2026  Justin A. S. Bull
 
 Data Source: Environment and Climate Change Canada
 https://eccc-msc.github.io/open-data/licence/readme_en/
@@ -20,7 +20,8 @@ This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you a
 parser.add_argument(
     "-d",
     "--debug",
-    help="print lots of debugging statements",
+    help="print lots of debugging statements. With -w, also reload the webserver "
+    "when its code changes",
     action="store_const",
     dest="loglevel",
     const=logging.DEBUG,
@@ -48,20 +49,38 @@ parser.add_argument(
     help="EXPERIMENTAL: Run ECCC MSC AMQP Alerts as a webserver with sockets",
     dest="web_server",
 )
+parser.add_argument(
+    "--host",
+    help="address for the webserver to bind to, eg. 0.0.0.0 for all interfaces. "
+    "Overrides config.ini (default: 127.0.0.1). Requires -w",
+)
+parser.add_argument(
+    "-p",
+    "--port",
+    type=int,
+    help="port for the webserver to listen on. Overrides config.ini "
+    "(default: 5000). Requires -w",
+)
 parsed_args = parser.parse_args()
 
 logging.basicConfig(
     level=parsed_args.loglevel,
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
 )
-if parsed_args.loglevel <= logging.INFO:
-    # It's useful to see heartbeats run at an info level
-    logging.getLogger("pika.heartbeat").setLevel(logging.DEBUG)
 
 if parsed_args.web_server:
-    from .webserver import app
+    from .config import config
+    from .webserver import run as run_webserver
 
-    app.run(debug=(parsed_args.loglevel == logging.DEBUG))
+    run_webserver(
+        host=(
+            parsed_args.host if parsed_args.host is not None else config.webserver_host
+        ),
+        port=(
+            parsed_args.port if parsed_args.port is not None else config.webserver_port
+        ),
+        debug=(parsed_args.loglevel == logging.DEBUG),
+    )
 else:
     from .listen import run
 

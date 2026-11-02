@@ -1,8 +1,9 @@
 # eccc-msc-amqp-alerts
-# Copyright (C) 2022  Justin A. S. Bull
+# Copyright (C) 2026  Justin A. S. Bull
 # See __init__.py for full notice
 
 from configparser import ConfigParser
+
 from .wmo_header import gts_tables
 
 
@@ -17,6 +18,11 @@ class Config(object):
         self.bulletins = self._parser.getboolean("bulletins", "enabled")
         self.alerts = self._parser.getboolean("alerts", "enabled")
         self.bulletin_topics = self._expand_bulletin_topic()
+        # Optional section, so older config.ini files without it keep working
+        self.webserver_host = self._parser.get(
+            "webserver", "host", fallback="127.0.0.1"
+        )
+        self.webserver_port = self._parser.getint("webserver", "port", fallback=5000)
 
     def _expand_bulletin_topic(self):
         expanded_topics = []
