@@ -325,11 +325,11 @@ def connections(monkeypatch) -> Connections:
     return made
 
 
-def test_retry_delays_double_up_to_once_an_hour():
+def test_retry_delays_double_up_to_every_5_minutes():
     delays = message_consumer.queue_limit_retry_delays()
 
-    assert [next(delays) for _ in range(12)] == [
-        10, 20, 40, 80, 160, 320, 640, 1280, 2560, 3600, 3600, 3600
+    assert [next(delays) for _ in range(8)] == [
+        10, 20, 40, 80, 160, 300, 300, 300
     ]  # fmt: skip
 
 

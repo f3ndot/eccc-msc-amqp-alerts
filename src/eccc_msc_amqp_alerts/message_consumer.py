@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 # and refuses new ones while full. Starting waits this long before trying again,
 # doubling each time up to the maximum
 QUEUE_LIMIT_FIRST_RETRY_SECS = 10
-QUEUE_LIMIT_MAX_RETRY_SECS = 60 * 60
+QUEUE_LIMIT_MAX_RETRY_SECS = 5 * 60
 
 
 def queue_limit_retry_delays() -> t.Iterator[int]:
