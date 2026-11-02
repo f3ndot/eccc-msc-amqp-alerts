@@ -4,6 +4,7 @@
 
 import asyncio
 import dataclasses
+import functools
 import json
 import logging
 import os
@@ -35,16 +36,21 @@ app = QuartWithConsumerOrc(__name__)
 shutting_down = asyncio.Event()
 # How long a graceful shutdown gets before the process exits regardless
 FORCE_SHUTDOWN_AFTER_SECS = 10
+# Messages waiting to go out to each visitor. A visitor that falls this far behind
+# loses its oldest unsent messages rather than its newest
+WEBSOCKET_QUEUE_SIZE = 100
 
 
 # TODO: This should go into listen.py's on_bulletin_message and be the returned object
+# Shared by every visitor it's sent to, so the derived properties are cached and
+# computed once per message, not once per visitor
 @dataclasses.dataclass(repr=False)
 class AmqpBulletinMessage:
     routing_key: str
     message: str
     bulletin: str | None
 
-    @property
+    @functools.cached_property
     def region(self):
         # FIXME: doesn't work on alert CAP messages.. different URL format. Probably
         # because only Canadian CAPs come thru. Eg message:
@@ -54,7 +60,7 @@ class AmqpBulletinMessage:
         # TODO: parse body into its components as defined by MSC Datamart's scheme
         return self.message.split(" ")[-1].split("/")[-1][2:4]
 
-    @property
+    @functools.cached_property
     def decoded_wmo_header(self):
         # FIXME: doesn't work on alert CAP messages.. different URL format
         try:
@@ -73,7 +79,9 @@ class AmqpBulletinMessage:
 
     def __repr__(self) -> str:
         repr_fields = ", ".join(
-            [f"{k}={v}" for k, v in self.__dict__.items() if k != "bulletin"]
+            f"{f.name}={getattr(self, f.name)}"
+            for f in dataclasses.fields(self)
+            if f.name != "bulletin"
         )
         return (
             self.__class__.__qualname__
@@ -81,10 +89,16 @@ class AmqpBulletinMessage:
         )
 
     def jsondict(self):
-        d = self.__dict__
-        d["region"] = self.region
-        d["decoded_wmo_header"] = self.decoded_wmo_header
-        return d
+        return {
+            **dataclasses.asdict(self),
+            "region": self.region,
+            "decoded_wmo_header": self.decoded_wmo_header,
+        }
+
+    @functools.cached_property
+    def payload(self) -> str:
+        """The JSON sent to visitors. Serialized the same way `send_json` would"""
+        return app.json.dumps(self.jsondict())
 
 
 @dataclasses.dataclass
@@ -122,28 +136,27 @@ class ConsumerOrchestrator:
     def _push_to_ws_queue(
         self, message: AmqpBulletinMessage, conn: WebsocketConnection
     ):
-        try:
-            _filter = conn.config["region_filter"]
-            if _filter != "any" and message.region != _filter:
-                logger.info(
-                    f"Skipping push {message} due to region filter {_filter} on queue {id(conn.queue)}"
-                )
-                return
-            if (
-                conn.config["sigmet_filter"]
-                and message.decoded_wmo_header is not None
-                and message.decoded_wmo_header["data_type_sub"]
-                in AIRMET_SIGMET_SUBTYPES
-            ):
-                logger.info(
-                    f"Skipping push {message} due to AIRMET/SIGMET filter on queue {id(conn.queue)}"
-                )
-                return
-            conn.queue.put_nowait(message)
-        except asyncio.QueueFull:
-            logger.warning(
-                f"SKIPPING PUSH {message} for full websocket queue {id(conn.queue)}"
+        _filter = conn.config["region_filter"]
+        if _filter != "any" and message.region != _filter:
+            logger.info(
+                f"Skipping push {message} due to region filter {_filter} on queue {id(conn.queue)}"
             )
+            return
+        if (
+            conn.config["sigmet_filter"]
+            and message.decoded_wmo_header is not None
+            and message.decoded_wmo_header["data_type_sub"] in AIRMET_SIGMET_SUBTYPES
+        ):
+            logger.info(
+                f"Skipping push {message} due to AIRMET/SIGMET filter on queue {id(conn.queue)}"
+            )
+            return
+        if conn.queue.full():
+            dropped = conn.queue.get_nowait()
+            logger.warning(
+                f"Dropping oldest unsent {dropped} for slow websocket queue {id(conn.queue)}"
+            )
+        conn.queue.put_nowait(message)
 
     async def run(self):
         print("🔌 Connecting... ", end="", flush=True)
@@ -240,13 +253,13 @@ async def handle_recv_ws(conn: WebsocketConnection):
 async def send_from_queue(queue: OnMessageAIOQueue):
     while True:
         item = await queue.get()
-        await websocket.send_json(item.jsondict())
+        await websocket.send(item.payload)
 
 
 @app.websocket("/ws")
 async def ws():
     tasks: list[asyncio.Task] = []
-    queue: OnMessageAIOQueue = asyncio.Queue(maxsize=1)
+    queue: OnMessageAIOQueue = asyncio.Queue(maxsize=WEBSOCKET_QUEUE_SIZE)
     conn = WebsocketConnection(queue=queue)
     try:
         logger.info(f"Adding {queue}")
@@ -263,8 +276,7 @@ async def ws():
             await websocket.send_json(
                 {"sysmsg": "Loading last received bulletin while you wait :-)"}
             )
-            item = app.consumer_orc.last_bulletin
-            await websocket.send_json(item.jsondict())
+            await websocket.send(app.consumer_orc.last_bulletin.payload)
         send_task = asyncio.create_task(send_from_queue(queue))
         shutdown_task = asyncio.create_task(shutting_down.wait())
         tasks += [send_task, shutdown_task]
